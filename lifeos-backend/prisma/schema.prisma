@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  password           String
+  name               String?
+  subscriptionStatus String    @default("free")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  goals              Goal[]
+  tasks              Task[]
+  sessions           Session[]
+}
+
+model Goal {
+  id           Int      @id @default(autoincrement())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+  type         String
+  description  String
+  targetValue  Int?
+  currentValue Int?     @default(0)
+  priority     Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Task {
+  id           Int       @id @default(autoincrement())
+  user         User      @relation(fields: [userId], references: [id])
+  userId       Int
+  type         String
+  title        String
+  description  String?
+  scheduledFor DateTime?
+  status       String    @default("pending")
+  aiGenerated  Boolean   @default(false)
+  startTime    DateTime?
+  endTime      DateTime?
+  duration     Int? // seconds
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
+}
+
+model Session {
+  id           Int       @id @default(autoincrement())
+  user         User      @relation(fields: [userId], references: [id])
+  userId       Int
+  task         Task?     @relation(fields: [taskId], references: [id])
+  taskId       Int?
+  sessionStart DateTime
+  sessionEnd   DateTime?
+  duration     Int? // seconds
+  type         String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}

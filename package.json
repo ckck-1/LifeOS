@@ -1,0 +1,21 @@
+{
+  "name": "lifeos",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000L\u0000i\u0000f\u0000e\u0000O\u0000S\u0000\r\u0000 \u0000",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ckck-1/LifeOS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ckck-1/LifeOS/issues"
+  },
+  "homepage": "https://github.com/ckck-1/LifeOS#readme"
+}
