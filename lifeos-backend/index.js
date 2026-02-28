@@ -11,6 +11,7 @@ const goalRoutes = require("./../lifeos-backend/src/routes/goalRoutes");
 const taskRoutes = require("./../lifeos-backend/src/routes/taskRoutes");
 const sessionRoutes = require("./../lifeos-backend/src/routes/taskRoutes");
 const aiRoutes = require("./../lifeos-backend/src/routes/aiRoutes");
+const chatRoutes = require("./../lifeos-backend/src/routes/chatRoutes")
 
 // Error handler
 const errorHandler = require("../lifeos-backend/src/middlewares/errorHandler");
@@ -27,6 +28,7 @@ app.use("/goals", goalRoutes);
 app.use("/tasks", taskRoutes);
 app.use("/sessions", sessionRoutes);
 app.use("/ai", aiRoutes);
+app.use("/chat",chatRoutes)
 
 // Health check route (optional but useful)
 app.get("/", (req, res) => {
