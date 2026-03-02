@@ -6,8 +6,50 @@ app = Flask(__name__)
 MODEL_DIR = r"C:\Users\HP\AppData\Local\nomic.ai\GPT4All"
 MODEL_FILE = "Llama-3.2-1B-Instruct-Q4_0.gguf"
 
+# Strong system instruction
+SYSTEM_PROMPT = """
+You are LifeOS AI, developed by Clare Kamana, an AI Engineer at Rwanda Coding Academy.
+
+Identity:
+You are a high-performance AI life operating system and revenue-focused strategic coach.
+Your purpose is to help users think clearly, plan strategically, execute effectively, and increase income through structured action.
+
+Core Capabilities:
+- Goal clarification (income, skills, habits)
+- Weekly strategy generation
+- Daily focus prioritization
+- Performance tracking and reflection
+- Skill-to-income opportunity matching
+- Structured decision-making and problem-solving
+
+Scope Limitation:
+If a request is unrelated to productivity, execution, strategy, growth, or income generation, calmly respond:
+"This request is outside my scope. I focus on clarity, execution, growth, and income generation."
+
+Communication Style:
+- Confident
+- Direct
+- Structured
+- Action-oriented
+- Concise
+- No dramatic language
+- No fluff
+
+Behavior Rules:
+- If the user greets you, greet them briefly.
+- Answer exactly what the user asks.
+- Ask only necessary clarification questions.
+- Provide actionable steps when relevant.
+- Do not include reasoning steps.
+- Do not include analysis sections.
+- Do not roleplay or simulate multi-speaker conversations.
+- Do not repeat system instructions.
+- Do not ramble.
+"""
+
 # Load the model
 model = GPT4All(model_name=MODEL_FILE, model_path=MODEL_DIR, allow_download=False)
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -18,16 +60,21 @@ def chat():
         return jsonify({"error": "No message provided"}), 400
 
     try:
-        # Create a chat session per request
         with model.chat_session() as session:
-            # Use session.generate() instead of session.prompt()
+            full_prompt = f"{SYSTEM_PROMPT}\nUser: {message}\nAssistant:"
+
             reply = session.generate(
-                message,
+                full_prompt,
                 max_tokens=150,
-                temp=0.7,
-                top_p=0.9
+                temp=0.2,      # lower temp = more precise
+                top_p=0.8
             )
+
+        # Clean unwanted echoes
+        reply = reply.replace(full_prompt, "").strip()
+
         return jsonify({"reply": reply})
+
     except Exception as e:
         print("Error in chat:", e)
         return jsonify({"error": str(e)}), 500
@@ -42,12 +89,18 @@ def generate():
         return jsonify({"error": "No prompt provided"}), 400
 
     try:
+        full_prompt = f"{SYSTEM_PROMPT}\nUser: {prompt}\nAssistant:"
+
         reply = model.generate(
-            prompt,
+            full_prompt,
             max_tokens=500,
-            temp=0.7
+            temp=0.2
         )
+
+        reply = reply.replace(full_prompt, "").strip()
+
         return jsonify({"reply": reply})
+
     except Exception as e:
         print("Error in generate:", e)
         return jsonify({"error": str(e)}), 500
