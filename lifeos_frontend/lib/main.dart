@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'LifeOS', // Updated title
       theme: ThemeData(
         // 2. FIXED SYNTAX HERE: Added 'ColorScheme' before '.fromSeed'

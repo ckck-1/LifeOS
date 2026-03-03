@@ -1,35 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lifeos_frontend/auth/login.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
-
-  @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  // Content for the different slides
-  final List<Map<String, String>> _onboardingData = [
-    {
-      'title': 'Plan smart Earn real.',
-      'subtitle': 'Daily strategy, real results. Unlock your full potential',
-    },
-    {
-      'title': 'From chaos to control.',
-      'subtitle': 'AI companion that turns chaos into clarity.',
-    },
-  ];
-
-  void _navigateToLogin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,71 +12,70 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             children: [
-              // Skip Button
+              // --- Skip Button ---
               Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
-                  onPressed: _navigateToLogin,
+                  onPressed: () {},
                   child: const Text(
                     'Skip',
                     style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 ),
               ),
-              // Image Card
+              const SizedBox(height: 20),
+
+              // --- Main Image Card ---
               Expanded(
                 flex: 5,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(32),
-                  child: Container(
-                    color: Colors.black12,
-                    child: const Center(child: Text("Onboarding Image")),
-                  ),
+                  child: Image.asset("name")
                 ),
               ),
-              // Indicators
+
+              // --- Pagination Dots ---
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_onboardingData.length, (index) {
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
+                  children: List.generate(3, (index) {
+                    return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: _currentPage == index ? 12 : 8,
-                      height: _currentPage == index ? 12 : 8,
+                      width: index == 1 ? 12 : 8,
+                      height: index == 1 ? 12 : 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _currentPage == index
-                            ? Colors.black
-                            : Colors.grey.shade400,
+                        color: index == 1 ? Colors.black : Colors.grey.shade400,
+                        border: index == 1
+                            ? Border.all(color: Colors.white, width: 2)
+                            : null,
                       ),
                     );
                   }),
                 ),
               ),
-              // Text
-              Text(
-                _onboardingData[_currentPage]['title']!,
+
+              // --- Text Content ---
+              const Text(
+                'Plan smart Earn real.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                _onboardingData[_currentPage]['subtitle']!,
+              const Text(
+                'Daily strategy, real results. Unlock your full potential',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                  height: 1.5,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
               ),
+
               const Spacer(),
-              // Navigation Pill
+
+              // --- Bottom Navigation Controls ---
               Container(
                 margin: const EdgeInsets.only(bottom: 40),
                 padding: const EdgeInsets.symmetric(
@@ -120,10 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        onPressed: () => _pageController.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.ease,
-                        ),
+                        onPressed: () {},
                         icon: const Icon(Icons.arrow_back, color: Colors.grey),
                       ),
                       const VerticalDivider(
@@ -133,16 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         endIndent: 8,
                       ),
                       IconButton(
-                        onPressed: () {
-                          if (_currentPage == _onboardingData.length - 1) {
-                            _navigateToLogin();
-                          } else {
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.ease,
-                            );
-                          }
-                        },
+                        onPressed: () {},
                         icon: const Icon(
                           Icons.arrow_forward,
                           color: Colors.black,
