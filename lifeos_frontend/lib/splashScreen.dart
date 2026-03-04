@@ -16,20 +16,36 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<Offset> _slideAnimation;
 
   @override
-  // --- Inside lib/splash_screen.dart ---
-  @override
   void initState() {
     super.initState();
 
-    // ... animation setup code ...
+    // 1️⃣ Create controller
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
 
-    // 4. Timer for Navigation
+    // 2️⃣ Fade animation
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+
+    // 3️⃣ Slide animation (comes from bottom slightly)
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    // 4️⃣ Start animation
+    _controller.forward();
+
+    // 5️⃣ Navigate after delay
     Timer(const Duration(seconds: 3), () {
-      // --- UPDATE THIS PART ---
+      if (!mounted) return;
+
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const OnboardingScreen(), // Navigate to Onboarding
-        ),
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
       );
     });
   }
@@ -43,11 +59,10 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Off-white background
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Stack(
           children: [
-            // Centered Title
             Center(
               child: FadeTransition(
                 opacity: _fadeAnimation,
@@ -56,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: const Text(
                     'LifeOS',
                     style: TextStyle(
-                      fontSize: 40, // Larger font size for center title
+                      fontSize: 40,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.0,
                       color: Colors.black,
@@ -65,8 +80,6 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
             ),
-
-            // Bottom Version Text
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
@@ -75,8 +88,8 @@ class _SplashScreenState extends State<SplashScreen>
                   'Version 1.0',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
                     letterSpacing: 0.5,
+                    color: Colors.grey,
                   ),
                 ),
               ),
