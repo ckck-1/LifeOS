@@ -1,25 +1,36 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import '../../services/auth_service.dart';
 
-class Login extends StatefulWidget {
-  const Login({super.key});
+class SignUp extends StatefulWidget {
+  const SignUp({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  State<SignUp> createState() => _SignUpState();
 }
 
-class _LoginState extends State<Login> {
+class _SignUpState extends State<SignUp> {
   final AuthService _authService = AuthService();
 
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoading = false;
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleRegister() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("All fields are required")));
+      return;
+    }
+
     setState(() => _isLoading = true);
 
-    bool success = await _authService.login(
+    bool success = await _authService.register(
+      _nameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
@@ -27,16 +38,15 @@ class _LoginState extends State<Login> {
     setState(() => _isLoading = false);
 
     if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Login successful")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account created successfully")),
+      );
 
-      // Navigate to home screen here
-      // Navigator.pushReplacement(...)
+      Navigator.pop(context); // Go back to login screen
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid credentials")));
+      ).showSnackBar(const SnackBar(content: Text("Registration failed")));
     }
   }
 
@@ -46,30 +56,25 @@ class _LoginState extends State<Login> {
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
             children: [
-              const Spacer(flex: 2),
-
-              Image.asset('assets/logo.png', height: 100, width: 100),
-
-              const SizedBox(height: 40),
+              const Spacer(),
 
               const Text(
-                'Welcome to\nLifeOS',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 42,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A1A),
-                  letterSpacing: -1.0,
-                  height: 1.2,
-                ),
+                "Create Account",
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
               ),
 
               const SizedBox(height: 40),
 
-              // EMAIL FIELD
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(hintText: "Full Name"),
+              ),
+
+              const SizedBox(height: 16),
+
               TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(hintText: "Email"),
@@ -77,7 +82,6 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 16),
 
-              // PASSWORD FIELD
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -86,12 +90,11 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 30),
 
-              // LOGIN BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 60,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
+                  onPressed: _isLoading ? null : _handleRegister,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF121212),
                     shape: RoundedRectangleBorder(
@@ -100,8 +103,17 @@ class _LoginState extends State<Login> {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Log in", style: TextStyle(fontSize: 18)),
+                      : const Text("Sign Up", style: TextStyle(fontSize: 18)),
                 ),
+              ),
+
+              const SizedBox(height: 20),
+
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text("Already have an account? Log in"),
               ),
 
               const Spacer(),

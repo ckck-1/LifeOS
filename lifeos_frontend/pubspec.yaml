@@ -11,6 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  http: ^1.6.0
+  flutter_secure_storage: ^10.0.0
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +26,4 @@ flutter:
     - assets/logo.png
     - assets/robot.png
     - assets/robot2.png
+    - assets/Robot3.png
