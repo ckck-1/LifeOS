@@ -9,7 +9,7 @@ const initSocket = require("./socket");
 const authRoutes = require("./../lifeos-backend/src/routes/authRoutes");
 const goalRoutes = require("./../lifeos-backend/src/routes/goalRoutes");
 const taskRoutes = require("./../lifeos-backend/src/routes/taskRoutes");
-const sessionRoutes = require("./../lifeos-backend/src/routes/taskRoutes");
+const sessionRoutes = require("./src/routes/sessionRoutes");
 const aiRoutes = require("./../lifeos-backend/src/routes/aiRoutes");
 const chatRoutes = require("./../lifeos-backend/src/routes/chatRoutes")
 
@@ -44,6 +44,6 @@ initSocket(server);
 
 // Start server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🔥 LifeOS server running on port ${PORT}`);
 });

@@ -1,43 +1,62 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import 'package:lifeos_frontend/auth/register.dart';
+import 'package:lifeos_frontend/home.dart';
+import 'package:lifeos_frontend/services/auth_service.dart';
+import 'package:lifeos_frontend/auth/welcome.dart'; // Your post-login page
 
-class Login extends StatefulWidget {
-  const Login({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<Login> createState() => _LoginState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginState extends State<Login> {
-  final AuthService _authService = AuthService();
-
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  bool _loading = false;
 
-  bool _isLoading = false;
+  void _loginUser() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
-  Future<void> _handleLogin() async {
-    setState(() => _isLoading = true);
-
-    bool success = await _authService.login(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-    setState(() => _isLoading = false);
-
-    if (success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Login successful")));
-
-      // Navigate to home screen here
-      // Navigator.pushReplacement(...)
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Invalid credentials")));
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
     }
+
+    setState(() => _loading = true);
+
+    try {
+      final success = await _authService.login(email, password);
+      setState(() => _loading = false);
+
+      if (success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => AiAssistantScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid email or password')),
+        );
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error connecting to server: $e')));
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -45,66 +64,140 @@ class _LoginState extends State<Login> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(flex: 2),
-
-              Image.asset('assets/logo.png', height: 100, width: 100),
-
-              const SizedBox(height: 40),
-
-              const Text(
-                'Welcome to\nLifeOS',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 42,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A1A),
-                  letterSpacing: -1.0,
-                  height: 1.2,
+              const SizedBox(height: 20),
+              // Back Button
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.arrow_back_ios_new, size: 18),
                 ),
               ),
-
               const SizedBox(height: 40),
-
-              // EMAIL FIELD
-              TextField(
+              // Header
+              const Text(
+                'Login Your\nAccount',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3142),
+                ),
+              ),
+              const SizedBox(height: 40),
+              // Email Field
+              CustomTextField(
+                hint: 'JosephIren@Mail.Com',
+                icon: Icons.mail_outline,
                 controller: _emailController,
-                decoration: const InputDecoration(hintText: "Email"),
               ),
-
               const SizedBox(height: 16),
-
-              // PASSWORD FIELD
-              TextField(
+              // Password Field
+              CustomTextField(
+                hint: '●●●●●●●●●●●●',
+                icon: Icons.lock_outline,
+                isPassword: true,
                 controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(hintText: "Password"),
               ),
-
-              const SizedBox(height: 30),
-
-              // LOGIN BUTTON
+              // Forgot Password
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'Forgot Password ?',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Login Button
               SizedBox(
                 width: double.infinity,
-                height: 60,
+                height: 55,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
+                  onPressed: _loading ? null : _loginUser,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF121212),
+                    backgroundColor: const Color(0xFF121515),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(40),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-                  child: _isLoading
+                  child: _loading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Log in", style: TextStyle(fontSize: 18)),
+                      : const Text(
+                          'Login',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                 ),
               ),
-
-              const Spacer(),
+              const SizedBox(height: 20),
+              // Switch to Sign Up
+              Center(
+                child: GestureDetector(
+                  onTap: () {
+                    // Navigate to Register (Replacement)
+                    Navigator.pushReplacementNamed(context, '/register');
+                  },
+                  child: RichText(
+                    text: const TextSpan(
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      children: [
+                        TextSpan(text: "Create New Account? "),
+                        TextSpan(
+                          text: "Sign up",
+                          style: TextStyle(
+                            color: Color(0xFF121515),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+              // Social Footer
+              const Center(
+                child: Text(
+                  "Continue With Accounts",
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: SocialButton(
+                      label: 'GOOGLE',
+                      color: const Color(0xFFF5D1CB),
+                      textColor: const Color(0xFFD35D47),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: SocialButton(
+                      label: 'FACEBOOK',
+                      color: const Color(0xFFD1DCEB),
+                      textColor: const Color(0xFF5A7DB0),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

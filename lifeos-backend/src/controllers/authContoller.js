@@ -10,6 +10,7 @@ async function register(req, res) {
       data: { email, password: hashed, name },
     });
     res.json({ message: "User created", userId: user.id });
+    console.log("User created")
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -25,6 +26,7 @@ async function login(req, res) {
 
   const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
   res.json({ token });
+  console.log("User Inside")
 }
 
 module.exports = { register, login };

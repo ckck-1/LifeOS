@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lifeos_frontend/auth/login.dart';
+import 'package:lifeos_frontend/auth/welcome.dart';
 
 class OnboardingItem {
   final String title;
@@ -45,7 +45,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _navigateToLogin() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const Login()),
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
     );
   }
 
