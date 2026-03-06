@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
-import './splashScreen.dart'; // 1. IMPORT YOUR SPLASH FILE HERE
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import './splashScreen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // ⚡ Must be first
+
+  // Optional: Initialize SharedPreferences early if needed
+  final prefs = await SharedPreferences.getInstance();
+
+  // Hide status bar globally
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
   runApp(const MyApp());
 }
 
@@ -12,13 +22,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'LifeOS', // Updated title
+      title: 'LifeOS',
       theme: ThemeData(
-        // 2. FIXED SYNTAX HERE: Added 'ColorScheme' before '.fromSeed'
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      // 3. SET SPLASH SCREEN AS HOME
       home: const SplashScreen(),
     );
   }

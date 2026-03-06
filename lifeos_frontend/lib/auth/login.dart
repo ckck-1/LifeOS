@@ -21,7 +21,12 @@ class _LoginPageState extends State<LoginPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    debugPrint("LOGIN BUTTON PRESSED");
+    debugPrint("Email entered: $email");
+
     if (email.isEmpty || password.isEmpty) {
+      debugPrint("ERROR: Fields are empty");
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
@@ -29,23 +34,36 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => _loading = true);
+    debugPrint("Sending login request to server...");
 
     try {
       final success = await _authService.login(email, password);
+
+      debugPrint("Server response received");
+      debugPrint("Login success status: $success");
+
       setState(() => _loading = false);
 
       if (success) {
+        debugPrint("Login successful. Navigating to AI Assistant Screen");
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => AiAssistantScreen()),
         );
       } else {
+        debugPrint("Login failed: Invalid credentials");
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid email or password')),
         );
       }
     } catch (e) {
       setState(() => _loading = false);
+
+      debugPrint("LOGIN ERROR OCCURRED");
+      debugPrint("Error details: $e");
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error connecting to server: $e')));

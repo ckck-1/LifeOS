@@ -1,4 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:lifeos_frontend/opportunities.dart';
+
+void main() {
+  runApp(const LifeOSApp());
+}
+
+class LifeOSApp extends StatelessWidget {
+  const LifeOSApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: AiAssistantScreen(),
+    );
+  }
+}
 
 class AiAssistantScreen extends StatelessWidget {
   const AiAssistantScreen({super.key});
@@ -14,90 +31,107 @@ class AiAssistantScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-              // Custom App Bar
+
+              /// AppBar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     _buildSquareBackButton(context),
                     const Expanded(
                       child: Center(
                         child: Text(
-                          'LifeOS Assistant',
+                          "LifeOS Assistant",
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A1A),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 45), // To balance the back button
+                    const SizedBox(width: 45),
                   ],
                 ),
               ),
+
               const SizedBox(height: 30),
-              // Category Filter Chips
+
+              /// Category Chips
               _buildCategoryList(),
+
               const SizedBox(height: 30),
-              // Latest Updates Section
-              _buildSectionHeader('Latest Updates'),
-              _buildHorizontalGrid([
+
+              /// Latest Updates
+              _buildSectionHeader("Latest Updates"),
+              _buildHorizontalGrid(context, [
                 _buildAssistantCard(
-                  'Opportunities\n& Income',
+                  context,
+                  "Opportunities\n& Income",
                   Icons.payments_outlined,
-                  const Color(0xFFF8F9FA),
+                  const OpportunitiesScreen(),
                 ),
                 _buildAssistantCard(
-                  'Goals\n& Progress',
+                  context,
+                  "Goals\n& Progress",
                   Icons.track_changes,
-                  const Color(0xFFF8F9FA),
+                  const GoalsScreen(),
                 ),
                 _buildAssistantCard(
-                  'Daily\nAdvice',
+                  context,
+                  "Daily\nAdvice",
                   Icons.calendar_today_outlined,
-                  const Color(0xFFF8F9FA),
+                  const DailyAdviceScreen(),
                 ),
               ]),
+
               const SizedBox(height: 20),
-              // Recent Section
-              _buildSectionHeader('Recent'),
-              _buildHorizontalGrid([
+
+              /// Recent
+              _buildSectionHeader("Recent"),
+              _buildHorizontalGrid(context, [
                 _buildAssistantCard(
-                  'LifeOS',
+                  context,
+                  "LifeOS",
                   Icons.chat_bubble_outline,
-                  const Color(0xFFF8F9FA),
-                  subtitle: 'Chat For All Life\nDecisions',
+                  const ChatScreen(),
+                  subtitle: "Chat For All Life\nDecisions",
                 ),
                 _buildAssistantCard(
-                  'Notes',
+                  context,
+                  "Notes",
                   Icons.sticky_note_2_outlined,
-                  const Color(0xFFF8F9FA),
-                  subtitle: 'Organize Your Mind.',
+                  const NotesScreen(),
+                  subtitle: "Organize Your Mind.",
                 ),
                 _buildAssistantCard(
-                  'Tasks',
+                  context,
+                  "Tasks",
                   Icons.spa_outlined,
-                  const Color(0xFFF8F9FA),
-                  subtitle: 'Execute What Matters',
+                  const TasksScreen(),
+                  subtitle: "Execute What Matters",
                 ),
               ]),
+
               const SizedBox(height: 20),
-              // Sessions Section
-              _buildSectionHeader('Sessions'),
-              _buildHorizontalGrid([
+
+              /// Sessions
+              _buildSectionHeader("Sessions"),
+              _buildHorizontalGrid(context, [
                 _buildAssistantCard(
-                  'Focus',
+                  context,
+                  "Focus",
                   Icons.hourglass_empty,
-                  const Color(0xFFF8F9FA),
+                  const FocusSessionScreen(),
                 ),
                 _buildAssistantCard(
-                  'Deep Work',
+                  context,
+                  "Deep Work",
                   Icons.bolt,
-                  const Color(0xFFF8F9FA),
+                  const DeepWorkScreen(),
                 ),
               ]),
-              const SizedBox(height: 20),
+
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -105,42 +139,40 @@ class AiAssistantScreen extends StatelessWidget {
     );
   }
 
+  /// BACK BUTTON
   Widget _buildSquareBackButton(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
         ],
       ),
       child: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new, size: 16),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {},
       ),
     );
   }
 
+  /// CATEGORY CHIPS
   Widget _buildCategoryList() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.only(left: 20),
       child: Row(
         children: [
-          _buildChip('All', isSelected: true),
-          _buildChip('Income', icon: Icons.favorite_border),
-          _buildChip('Skills', icon: Icons.sports_basketball_outlined),
-          _buildChip('Focus'),
+          _buildChip("All", isSelected: true),
+          _buildChip("Income"),
+          _buildChip("Skills"),
+          _buildChip("Focus"),
         ],
       ),
     );
   }
 
-  Widget _buildChip(String label, {bool isSelected = false, IconData? icon}) {
+  Widget _buildChip(String label, {bool isSelected = false}) {
     return Container(
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -148,45 +180,29 @@ class AiAssistantScreen extends StatelessWidget {
         color: isSelected ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(15),
       ),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey[600],
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (icon != null) ...[
-            const SizedBox(width: 8),
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? Colors.white : Colors.grey[400],
-            ),
-          ],
-        ],
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.grey[600],
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 
+  /// SECTION HEADER
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const Icon(Icons.arrow_forward, color: Colors.grey, size: 24),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget _buildHorizontalGrid(List<Widget> cards) {
+  /// HORIZONTAL CARD LIST
+  Widget _buildHorizontalGrid(BuildContext context, List<Widget> cards) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.only(left: 20),
@@ -194,73 +210,147 @@ class AiAssistantScreen extends StatelessWidget {
     );
   }
 
+  /// CARD
   Widget _buildAssistantCard(
+    BuildContext context,
     String title,
     IconData icon,
-    Color color, {
+    Widget screen, {
     String? subtitle,
   }) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 15),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 30, color: Colors.black),
-          const SizedBox(height: 15),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              height: 1.2,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 8),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => screen),
+        );
+      },
+      child: Container(
+        width: 150,
+        margin: const EdgeInsets.only(right: 15),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 30, color: Colors.black),
+            const SizedBox(height: 15),
             Text(
-              subtitle,
+              title,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey, fontSize: 10),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey, fontSize: 10),
+              ),
+            ],
+            const SizedBox(height: 15),
+            const CircleAvatar(
+              radius: 12,
+              backgroundColor: Colors.black26,
+              child: Icon(Icons.arrow_forward, size: 14, color: Colors.white),
             ),
           ],
-          const SizedBox(height: 15),
-          // Circular Arrow Button
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Colors.black26,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.arrow_forward,
-              color: Colors.white,
-              size: 14,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
+  /// BOTTOM NAV
   Widget _buildBottomNav() {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       showSelectedLabels: false,
       showUnselectedLabels: false,
-      selectedItemColor: Colors.black,
-      unselectedItemColor: Colors.grey[400],
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.access_time), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: ""),
+        BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded), label: ""),
+        BottomNavigationBarItem(icon: Icon(Icons.access_time), label: ""),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ""),
       ],
     );
   }
+}
+
+////////////////////////////////////////////////////////////
+/// PLACEHOLDER SCREENS
+////////////////////////////////////////////////////////////
+
+class GoalsScreen extends StatelessWidget {
+  const GoalsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _blankScreen("Goals & Progress");
+  }
+}
+
+class DailyAdviceScreen extends StatelessWidget {
+  const DailyAdviceScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _blankScreen("Daily Advice");
+  }
+}
+
+class ChatScreen extends StatelessWidget {
+  const ChatScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _blankScreen("LifeOS Chat");
+  }
+}
+
+class NotesScreen extends StatelessWidget {
+  const NotesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _blankScreen("Notes");
+  }
+}
+
+class TasksScreen extends StatelessWidget {
+  const TasksScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _blankScreen("Tasks");
+  }
+}
+
+class FocusSessionScreen extends StatelessWidget {
+  const FocusSessionScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _blankScreen("Focus Session");
+  }
+}
+
+class DeepWorkScreen extends StatelessWidget {
+  const DeepWorkScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _blankScreen("Deep Work");
+  }
+}
+
+/// GENERIC BLANK PAGE
+Widget _blankScreen(String title) {
+  return Scaffold(
+    appBar: AppBar(title: Text(title), backgroundColor: Colors.black),
+    body: Center(
+      child: Text("$title Screen", style: const TextStyle(fontSize: 22)),
+    ),
+  );
 }
