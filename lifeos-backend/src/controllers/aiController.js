@@ -1,14 +1,23 @@
 const axios = require("axios");
 const prisma = require("../utils/prisma");
 
-// Helper to call the GPT4All Flask server
+// Call GPT4All Flask server
 async function callAI(prompt) {
   try {
-    const res = await axios.post("http://127.0.0.1:5001/generate", { prompt }, {
-      headers: { "Content-Type": "application/json" },
-      timeout: 360000, // 60s timeout
-    });
-    // Return the actual AI reply
+    console.log("[AI] Sending prompt to AI...");
+    console.log(prompt);
+
+    const res = await axios.post(
+      "http://127.0.0.1:5001/generate",
+      { prompt },
+      {
+        headers: { "Content-Type": "application/json" },
+        timeout: 360000,
+      }
+    );
+
+    console.log("[AI] Raw response:", res.data);
+
     return res.data.reply || null;
   } catch (err) {
     console.error("AI generate error:", err.message);
@@ -16,7 +25,9 @@ async function callAI(prompt) {
   }
 }
 
-// Controller functions
+//
+// WEEKLY PLAN
+//
 async function weeklyPlan(req, res) {
   try {
     const user = await prisma.user.findUnique({
@@ -25,13 +36,29 @@ async function weeklyPlan(req, res) {
     });
 
     const prompt = `
-Summarize opportunities for this user in 2–3 sentences based on goals: ${JSON.stringify(user.goals)} 
-and tasks: ${JSON.stringify(user.tasks)}. 
+You are LifeOS AI.
 
+Generate a concise weekly strategy for this user.
+
+User goals:
+${JSON.stringify(user.goals)}
+
+User tasks:
+${JSON.stringify(user.tasks)}
+
+Rules:
+- Output ONLY 2-3 sentences.
+- Do not include explanations.
+- Do not include "User:" or "Assistant:".
 `;
-const aiResponse = await callAI(prompt);
+
+    const aiResponse = await callAI(prompt);
+
     if (!aiResponse) {
-      return res.status(500).json({ success: false, message: "Failed to generate weekly plan" });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate weekly plan",
+      });
     }
 
     res.json({ success: true, response: aiResponse });
@@ -40,6 +67,9 @@ const aiResponse = await callAI(prompt);
   }
 }
 
+//
+// DAILY FOCUS
+//
 async function dailyFocus(req, res) {
   try {
     const user = await prisma.user.findUnique({
@@ -47,11 +77,26 @@ async function dailyFocus(req, res) {
       include: { tasks: true },
     });
 
-    const prompt = `Generate daily focus for this user based on tasks: ${JSON.stringify(user.tasks)}`;
+    const prompt = `
+You are LifeOS AI.
+
+Generate today's focus for the user.
+
+Tasks:
+${JSON.stringify(user.tasks)}
+
+Rules:
+- Output ONLY 2 sentences.
+- Be direct and actionable.
+`;
+
     const aiResponse = await callAI(prompt);
 
     if (!aiResponse) {
-      return res.status(500).json({ success: false, message: "Failed to generate daily focus" });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate daily focus",
+      });
     }
 
     res.json({ success: true, response: aiResponse });
@@ -60,6 +105,9 @@ async function dailyFocus(req, res) {
   }
 }
 
+//
+// OPPORTUNITIES
+//
 async function opportunities(req, res) {
   try {
     const user = await prisma.user.findUnique({
@@ -67,16 +115,67 @@ async function opportunities(req, res) {
       include: { goals: true, tasks: true },
     });
 
-    const prompt = `Generate opportunities for this user based on goals and tasks, you are strictly commanded to output 
-    2 sentences response only: ${JSON.stringify(user)}`;
-    //const prompt = `Hello there`
+    const prompt = `
+You are LifeOS AI.
+
+Generate exactly 3 opportunities that could improve this user's income, skills, or productivity.
+
+User goals:
+${JSON.stringify(user.goals)}
+
+User tasks:
+${JSON.stringify(user.tasks)}
+
+Rules:
+- Output ONLY valid JSON
+- Do not include explanations
+- Do not include User/Assistant text
+
+Format EXACTLY like this:
+
+{
+  "opportunities": [
+    {
+      "title": "Opportunity title",
+      "description": "Short description"
+    },
+    {
+      "title": "Opportunity title",
+      "description": "Short description"
+    },
+    {
+      "title": "Opportunity title",
+      "description": "Short description"
+    }
+  ]
+}
+`;
+
     const aiResponse = await callAI(prompt);
 
     if (!aiResponse) {
-      return res.status(500).json({ success: false, message: "Failed to generate opportunities" });
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate opportunities",
+      });
     }
 
-    res.json({ success: true, response: aiResponse });
+    let parsed;
+
+    try {
+      parsed = JSON.parse(aiResponse);
+    } catch (err) {
+      console.error("[AI PARSE ERROR]", aiResponse);
+      return res.status(500).json({
+        success: false,
+        message: "AI returned invalid JSON",
+      });
+    }
+
+    res.json({
+      success: true,
+      opportunities: parsed.opportunities,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

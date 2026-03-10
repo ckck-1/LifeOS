@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  final String baseUrl = "https://22b4-154-68-65-174.ngrok-free.app";
+  final String baseUrl = "https://8840-154-68-65-174.ngrok-free.app";
   final _storage = const FlutterSecureStorage();
 
   // REGISTER

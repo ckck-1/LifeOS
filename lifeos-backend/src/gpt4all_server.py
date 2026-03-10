@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify
 from gpt4all import GPT4All
+import json
 
 app = Flask(__name__)
 
 MODEL_DIR = r"C:\Users\HP\AppData\Local\nomic.ai\GPT4All"
 MODEL_FILE = "Llama-3.2-1B-Instruct-Q4_0.gguf"
 
-# Strong system instruction
 SYSTEM_PROMPT = """
-You are LifeOS AI, developed by Clare Kamana, an AI Engineer at Rwanda Coding Academy.
+You are LifeOS AI, developed by Clare ck, an AI Engineer at Rwanda Coding Academy.
 
 Identity:
 You are a high-performance AI life operating system and revenue-focused strategic coach.
@@ -47,37 +47,7 @@ Behavior Rules:
 - Do not ramble.
 """
 
-# Load the model
 model = GPT4All(model_name=MODEL_FILE, model_path=MODEL_DIR, allow_download=False)
-
-
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.json
-    message = data.get("message")
-
-    if not message:
-        return jsonify({"error": "No message provided"}), 400
-
-    try:
-        with model.chat_session() as session:
-            full_prompt = f"{SYSTEM_PROMPT}\nUser: {message}\nAssistant:"
-
-            reply = session.generate(
-                full_prompt,
-                max_tokens=150,
-                temp=0.2,      # lower temp = more precise
-                top_p=0.8
-            )
-
-        # Clean unwanted echoes
-        reply = reply.replace(full_prompt, "").strip()
-
-        return jsonify({"reply": reply})
-
-    except Exception as e:
-        print("Error in chat:", e)
-        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/generate", methods=["POST"])
@@ -89,7 +59,23 @@ def generate():
         return jsonify({"error": "No prompt provided"}), 400
 
     try:
-        full_prompt = f"{SYSTEM_PROMPT}\nUser: {prompt}\nAssistant:"
+        # Force AI to return valid JSON
+        full_prompt = f"""
+{SYSTEM_PROMPT}
+
+You MUST respond with VALID JSON ONLY. Format exactly like this:
+
+{{
+  "opportunities": [
+    {{ "title": "Opportunity title here", "description": "Detailed description here" }},
+    {{ "title": "Second opportunity", "description": "Detailed description here" }},
+    {{ "title": "Third opportunity", "description": "Detailed description here" }}
+  ]
+}}
+
+User request: {prompt}
+Assistant:
+"""
 
         reply = model.generate(
             full_prompt,
@@ -97,9 +83,18 @@ def generate():
             temp=0.2
         )
 
+        # Clean up echoes
         reply = reply.replace(full_prompt, "").strip()
 
-        return jsonify({"reply": reply})
+        # Try parsing JSON
+        try:
+            json_data = json.loads(reply)
+        except json.JSONDecodeError:
+            print("AI returned invalid JSON, attempting to fix...")
+            # fallback: wrap as single opportunity
+            json_data = {"opportunities": [{"title": "AI Response", "description": reply}]}
+
+        return jsonify(json_data)
 
     except Exception as e:
         print("Error in generate:", e)
