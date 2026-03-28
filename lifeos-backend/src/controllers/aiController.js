@@ -2,25 +2,18 @@ const axios = require("axios");
 const prisma = require("../utils/prisma");
 
 // Call GPT4All Flask server
+
 async function callAI(prompt) {
   try {
-    console.log("[AI] Sending prompt to AI...");
-    console.log(prompt);
-
     const res = await axios.post(
       "http://127.0.0.1:5001/generate",
       { prompt },
-      {
-        headers: { "Content-Type": "application/json" },
-        timeout: 360000,
-      }
+      { headers: { "Content-Type": "application/json" }, timeout: 120000 }
     );
-
-    console.log("[AI] Raw response:", res.data);
 
     return res.data.reply || null;
   } catch (err) {
-    console.error("AI generate error:", err.message);
+    console.error("AI generate error:", err.message, err.response?.data);
     return null;
   }
 }
@@ -35,24 +28,7 @@ async function weeklyPlan(req, res) {
       include: { goals: true, tasks: true },
     });
 
-    const prompt = `
-You are LifeOS AI.
-
-Generate a concise weekly strategy for this user.
-
-User goals:
-${JSON.stringify(user.goals)}
-
-User tasks:
-${JSON.stringify(user.tasks)}
-
-Rules:
-- Output ONLY 2-3 sentences.
-- Do not include explanations.
-- Do not include "User:" or "Assistant:".
-`;
-
-    const aiResponse = await callAI(prompt);
+    const aiResponse = await callAI(user.goals, user.tasks);
 
     if (!aiResponse) {
       return res.status(500).json({
@@ -66,7 +42,6 @@ Rules:
     res.status(500).json({ success: false, message: err.message });
   }
 }
-
 //
 // DAILY FOCUS
 //

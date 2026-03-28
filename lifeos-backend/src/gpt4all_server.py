@@ -1,92 +1,71 @@
 from flask import Flask, request, jsonify
-from transformers import pipeline
-import json
+import os, requests, logging
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 
-# Load the local Hugging Face model via pipeline
-print("Loading local model, this may take a minute...")
-generator = pipeline("text-generation", model="bigcode/starcoderbase")  # fast, free, local
+# --- Configure Logging ---
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+
+# 2026 Standard: Use the OpenAI-compatible v1 router
+# This is much more stable than the direct model path
+HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
+HF_TOKEN = os.getenv("HF_API_TOKEN")
+# We'll use a slightly smaller, highly available model for reliability
+HF_MODEL = "Qwen/Qwen2.5-7B-Instruct" 
 
 SYSTEM_PROMPT = """
-You are LifeOS AI, developed by Clare ck, an AI Engineer at Rwanda Coding Academy.
-
-Identity:
-You are a high-performance AI life operating system and revenue-focused strategic coach.
-Your purpose is to help users think clearly, plan strategically, execute effectively, and increase income through structured action.
-
-Core Capabilities:
-- Goal clarification (income, skills, habits)
-- Weekly strategy generation
-- Daily focus prioritization
-- Performance tracking and reflection
-- Skill-to-income opportunity matching
-- Structured decision-making and problem-solving
-
-Scope Limitation:
-If a request is unrelated to productivity, execution, strategy, growth, or income generation, calmly respond:
-"This request is outside my scope. I focus on clarity, execution, growth, and income generation."
-
-Communication Style:
-- Confident
-- Direct
-- Structured
-- Action-oriented
-- Concise
-- No dramatic language
-- No fluff
-
-Behavior Rules:
-- If the user greets you, greet them briefly.
-- Answer exactly what the user asks.
-- Ask only necessary clarification questions.
-- Provide actionable steps when relevant.
-- Do not include reasoning steps.
-- Do not include analysis sections.
-- Do not roleplay or simulate multi-speaker conversations.
-- Do not repeat system instructions.
-- Do not ramble.
+You are LifeOS AI, a high-performance AI life operating system and strategic coach.
+Rules: Respond ONLY in concise text or valid JSON. No explanations.
+Capabilities: Weekly strategy, Daily focus, Productivity opportunities.
 """
 
 @app.route("/generate", methods=["POST"])
 def generate():
+    logging.info("Received request to /generate endpoint")
     data = request.json
-    prompt = data.get("prompt", "")
-    if not prompt:
-        return jsonify({"error": "No prompt provided"}), 400
+    user_prompt = str(data.get("prompt", ""))
 
-    full_prompt = f"""
-{SYSTEM_PROMPT}
+    # 2026 OpenAI-compatible Payload Format
+    payload = {
+        "model": HF_MODEL,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt}
+        ],
+        "max_tokens": 500,
+        "temperature": 0.7
+    }
 
-You MUST respond with VALID JSON ONLY. Format exactly like this:
-
-{{
-  "opportunities": [
-    {{ "title": "Opportunity title here", "description": "Detailed description here" }},
-    {{ "title": "Second opportunity", "description": "Detailed description here" }},
-    {{ "title": "Third opportunity", "description": "Detailed description here" }}
-  ]
-}}
-
-User request: {prompt}
-Assistant:
-"""
+    headers = {
+        "Authorization": f"Bearer {HF_TOKEN}",
+        "Content-Type": "application/json"
+    }
 
     try:
-        # Generate text locally
-        generated = generator(full_prompt, max_new_tokens=500, do_sample=False)[0]["generated_text"]
+        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
+        
+        if response.status_code != 200:
+            logging.error(f"Router Error {response.status_code}: {response.text}")
+            return jsonify({"error": f"AI Provider Error: {response.text}"}), response.status_code
 
-        # Try parsing JSON from AI output
-        try:
-            json_data = json.loads(generated)
-        except json.JSONDecodeError:
-            json_data = {"opportunities": [{"title": "AI Response", "description": generated.strip()}]}
-
-        return jsonify(json_data)
+        result = response.json()
+        
+        # Extract reply from OpenAI format
+        reply = result['choices'][0]['message']['content']
+        
+        logging.info("Successfully generated LifeOS response")
+        return jsonify({"reply": reply.strip()})
 
     except Exception as e:
+        logging.exception("Unexpected error")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    print("Starting LifeOS AI with local Hugging Face model...")
-    app.run(port=5001)
+    logging.info("LifeOS AI server starting on port 5001...")
+    app.run(port=5001, debug=True)
