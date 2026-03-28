@@ -1,11 +1,12 @@
 from flask import Flask, request, jsonify
-from gpt4all import GPT4All
+from transformers import pipeline
 import json
 
 app = Flask(__name__)
 
-MODEL_DIR = r"C:\Users\HP\AppData\Local\nomic.ai\GPT4All"
-MODEL_FILE = "Llama-3.2-1B-Instruct-Q4_0.gguf"
+# Load the local Hugging Face model via pipeline
+print("Loading local model, this may take a minute...")
+generator = pipeline("text-generation", model="bigcode/starcoderbase")  # fast, free, local
 
 SYSTEM_PROMPT = """
 You are LifeOS AI, developed by Clare ck, an AI Engineer at Rwanda Coding Academy.
@@ -47,20 +48,14 @@ Behavior Rules:
 - Do not ramble.
 """
 
-model = GPT4All(model_name=MODEL_FILE, model_path=MODEL_DIR, allow_download=False)
-
-
 @app.route("/generate", methods=["POST"])
 def generate():
     data = request.json
     prompt = data.get("prompt", "")
-
     if not prompt:
         return jsonify({"error": "No prompt provided"}), 400
 
-    try:
-        # Force AI to return valid JSON
-        full_prompt = f"""
+    full_prompt = f"""
 {SYSTEM_PROMPT}
 
 You MUST respond with VALID JSON ONLY. Format exactly like this:
@@ -77,30 +72,21 @@ User request: {prompt}
 Assistant:
 """
 
-        reply = model.generate(
-            full_prompt,
-            max_tokens=500,
-            temp=0.2
-        )
+    try:
+        # Generate text locally
+        generated = generator(full_prompt, max_new_tokens=500, do_sample=False)[0]["generated_text"]
 
-        # Clean up echoes
-        reply = reply.replace(full_prompt, "").strip()
-
-        # Try parsing JSON
+        # Try parsing JSON from AI output
         try:
-            json_data = json.loads(reply)
+            json_data = json.loads(generated)
         except json.JSONDecodeError:
-            print("AI returned invalid JSON, attempting to fix...")
-            # fallback: wrap as single opportunity
-            json_data = {"opportunities": [{"title": "AI Response", "description": reply}]}
+            json_data = {"opportunities": [{"title": "AI Response", "description": generated.strip()}]}
 
         return jsonify(json_data)
 
     except Exception as e:
-        print("Error in generate:", e)
         return jsonify({"error": str(e)}), 500
 
-
 if __name__ == "__main__":
-    print("Loading GPT4All model...")
+    print("Starting LifeOS AI with local Hugging Face model...")
     app.run(port=5001)

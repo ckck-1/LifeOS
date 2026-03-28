@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./src/config/swagger");
 
 const initSocket = require("./socket");
 
@@ -29,6 +31,7 @@ app.use("/tasks", taskRoutes);
 app.use("/sessions", sessionRoutes);
 app.use("/ai", aiRoutes);
 app.use("/chat",chatRoutes)
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check route (optional but useful)
 app.get("/", (req, res) => {

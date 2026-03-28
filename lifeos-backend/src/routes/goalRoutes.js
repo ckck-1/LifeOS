@@ -1,13 +1,53 @@
 const express = require("express");
 const { addGoal, getGoals } = require("../controllers/goalController");
-// Import the function directly since module.exports = authenticate
-const authenticate = require("../middlewares/authMiddleware.js"); 
+const authenticate = require("../middlewares/authMiddleware.js");
 
 const router = express.Router();
 
-router.use(authenticate); 
+router.use(authenticate);
 
-router.post("/", addGoal); 
-router.get("/", getGoals); 
+/**
+ * @swagger
+ * tags:
+ *   name: Goals
+ *   description: Goal management
+ */
+
+/**
+ * @swagger
+ * /goals:
+ *   post:
+ *     summary: Add goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             type: "fitness"
+ *             description: "Lose 5kg"
+ *             targetValue: 5
+ *             priority: 1
+ *     responses:
+ *       200:
+ *         description: Goal added
+ */
+router.post("/", addGoal);
+
+/**
+ * @swagger
+ * /goals:
+ *   get:
+ *     summary: Get goals
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of goals
+ */
+router.get("/", getGoals);
 
 module.exports = router;
