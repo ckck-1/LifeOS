@@ -13,7 +13,7 @@ const chatController = require("../controllers/chatController");
  * @swagger
  * /chat:
  *   post:
- *     summary: Chat with AI
+ *     summary: Chat with LifeOS AI
  *     tags: [Chat]
  *     requestBody:
  *       required: true

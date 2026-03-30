@@ -11,7 +11,8 @@ async function register(req, res) {
     });
     res.json({ message: "User created", userId: user.id });
     console.log("User created")
-  } catch (err) {
+  } catch (err) { 
+    
     res.status(400).json({ error: err.message });
   }
 }

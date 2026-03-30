@@ -23,4 +23,5 @@ const getAIResponse = async (modelName, systemPrompt, userPrompt) => {
   }
 };
 
-module.exports = { getAIResponse };
+
+module.exports = { getAIResponse };     
