@@ -21,7 +21,7 @@ const options = {
 
     servers: [
       {
-        url: "http://localhost:5000",
+        url: "https://lifeos-7nj8.onrender.com/",
       },
     ],
 
