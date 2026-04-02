@@ -9,7 +9,7 @@ exports.chatWithAI = async (req, res, next) => {
     }
 
     // Call your local Python AI server
-    const response = await axios.post("http://127.0.0.1:5001/chat", {
+    const response = await axios.post("https://lifeos-1-ai.onrender.com/chat", {
       message,
     });
 

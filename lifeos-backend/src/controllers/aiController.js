@@ -6,7 +6,7 @@ const prisma = require("../utils/prisma");
 async function callAI(prompt) {
   try {
     const res = await axios.post(
-      "http://127.0.0.1:5001/generate",
+      "https://lifeos-1-ai.onrender.com/generate",
       { prompt },
       { headers: { "Content-Type": "application/json" }, timeout: 120000 }
     );
