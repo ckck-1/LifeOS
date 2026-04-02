@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import os, requests, logging
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 app = Flask(__name__)
 
@@ -15,7 +16,7 @@ logging.basicConfig(
 # 2026 Standard: OpenAI-compatible v1 router
 HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 HF_TOKEN = os.getenv("HF_API_TOKEN")
-HF_MODEL = "Qwen/Qwen2.5-7B-Instruct" 
+HF_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 SYSTEM_PROMPT = """
 You are LifeOS AI, a high-performance AI life operating system and strategic coach.
@@ -37,7 +38,6 @@ def generate():
     data = request.json
     user_prompt = str(data.get("prompt", ""))
 
-    # 2026 OpenAI-compatible Payload Format
     payload = {
         "model": HF_MODEL,
         "messages": [
@@ -55,20 +55,19 @@ def generate():
 
     try:
         response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
-        
         if response.status_code != 200:
             logging.error(f"Router Error {response.status_code}: {response.text}")
             return jsonify({"error": f"AI Provider Error: {response.text}"}), response.status_code
 
         result = response.json()
         reply = result['choices'][0]['message']['content']
-        
         logging.info("Successfully generated LifeOS response")
         return jsonify({"reply": reply.strip()})
 
     except Exception as e:
         logging.exception("Unexpected error")
         return jsonify({"error": str(e)}), 500
+
 
 # -------------------- /chat Endpoint --------------------
 @app.route("/chat", methods=["POST"])
@@ -84,7 +83,6 @@ def chat():
         logging.warning("No user message provided")
         return jsonify({"error": "No message provided"}), 400
 
-    # Personalization prompt
     personalization_prompt = f"""
     You are LifeOS AI. Personalize your reply for {user_name}.
     Their current goals are: {user_goals}.
@@ -110,14 +108,12 @@ def chat():
 
     try:
         response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
-
         if response.status_code != 200:
             logging.error(f"Router Error {response.status_code}: {response.text}")
             return jsonify({"error": f"AI Provider Error: {response.text}"}), response.status_code
 
         result = response.json()
         reply = result['choices'][0]['message']['content']
-
         logging.info(f"Successfully generated personalized chat reply for {user_name}")
         return jsonify({"reply": reply.strip()})
 
@@ -125,7 +121,9 @@ def chat():
         logging.exception("Unexpected error in /chat")
         return jsonify({"error": str(e)}), 500
 
+
 # -------------------- Main --------------------
 if __name__ == "__main__":
-    logging.info("LifeOS AI server starting on port 5001...")
-    app.run(port=5001, debug=True)
+    port = int(os.environ.get("PORT", 5001))  # Render sets $PORT automatically
+    logging.info(f"LifeOS AI server starting on port {port}...")
+    app.run(host="0.0.0.0", port=port, debug=True)
