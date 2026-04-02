@@ -1,15 +1,29 @@
+require("dotenv").config();
+
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
 const { Pool } = require("pg");
-require('dotenv').config();
 
-// 1. Create a standard PG pool
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Create PostgreSQL pool with SSL (required for Supabase)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
 
-// 2. Set up the Prisma adapter
+// Optional: Test connection (runs once at startup)
+pool.connect()
+  .then(() => console.log("✅ Connected to PostgreSQL"))
+  .catch((err) => console.error("❌ Database connection error:", err));
+
+// Prisma adapter setup
 const adapter = new PrismaPg(pool);
 
-// 3. Pass the adapter to the client
-const prisma = new PrismaClient({ adapter });
+// Prisma client
+const prisma = new PrismaClient({
+  adapter,
+  log: ["error", "warn"], // optional: helps debugging
+});
 
 module.exports = prisma;
