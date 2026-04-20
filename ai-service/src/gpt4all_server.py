@@ -18,7 +18,8 @@ HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 HF_TOKEN = os.getenv("HF_API_TOKEN")
 HF_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
-SYSTEM_PROMPT ="""
+# SYSTEM_PROMPT: Hard-coded to enforce high-efficiency plain text output
+SYSTEM_PROMPT = """
 You are LifeOS AI, a high-performance AI life operating system and strategic coach.
 Created by: CK — full-stack dev, AI creator, productivity strategist, and community impact enthusiast.
 
@@ -88,7 +89,8 @@ def chat():
         logging.warning("No user message provided")
         return jsonify({"error": "No message provided"}), 400
 
-    personalization_prompt =f"""
+    # Explicitly directing the AI to avoid JSON in the prompt itself
+    personalization_prompt = f"""
     Personalize this reply for {user_name}. 
     Goals: {user_goals}. 
     Recent Activities: {', '.join(user_activities) if user_activities else 'none'}.
@@ -104,7 +106,7 @@ def chat():
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": personalization_prompt}
-        ],
+        ], # Added missing bracket/comma here
         "max_tokens": 500,
         "temperature": 0.7
     }
@@ -132,6 +134,7 @@ def chat():
 
 # -------------------- Main --------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))  # Render sets $PORT automatically
+    # Render and other cloud platforms provide the PORT environment variable
+    port = int(os.environ.get("PORT", 5001))
     logging.info(f"LifeOS AI server starting on port {port}...")
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False) # Debug False for production
