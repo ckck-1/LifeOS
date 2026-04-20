@@ -121,7 +121,7 @@ class _AskLifeOSSheetState extends State<AskLifeOSSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'LIFEOS',
+                'LifeOS',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
