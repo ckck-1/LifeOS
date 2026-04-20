@@ -3,9 +3,7 @@ import '../core/logo_painter.dart';
 import '../core/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  final VoidCallback onLoginSuccess;
-  final VoidCallback onSwitchToRegister;
-
+  final VoidCallback onLoginSuccess, onSwitchToRegister;
   const LoginScreen({super.key, required this.onLoginSuccess, required this.onSwitchToRegister});
 
   @override
@@ -17,86 +15,93 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  void _handleLogin() async {
-    setState(() => _isLoading = true);
-    bool success = await AuthService().login(_emailController.text, _passwordController.text);
-    setState(() => _isLoading = false);
-    
-    if (success) {
-      widget.onLoginSuccess();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Access Denied")));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    const primaryRed = Color(0xFFFF3B30);
+    // Define colors inside build to ensure they are available to the context
+    const Color primaryRed = Color(0xFF510105);
+    const Color inputBackground = Color(0xFF121316);
+    const Color mutedText = Color(0xFF6B6B73);
 
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Logo Section
-                Stack(alignment: Alignment.center, children: [
-                  Container(width: 64, height: 64, decoration: BoxDecoration(shape: BoxShape.circle, color: primaryRed.withOpacity(0.05))),
-                  CustomPaint(size: const Size(48, 48), painter: LifeOSLogoPainter(strokeColor: Colors.white, dotColor: primaryRed)),
-                ]),
-                const SizedBox(height: 24),
-                const Text('LIFEOS', style: TextStyle(fontSize: 20, letterSpacing: -0.5, fontWeight: FontWeight.w500)),
-                const Text('Your life, structured by intelligence', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(height: 48),
-
-                // Form
-                TextField(
-                  controller: _emailController,
-                  decoration: _inputDecoration("Email"),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: _inputDecoration("Password"),
-                ),
-                const SizedBox(height: 32),
-
-                // Submit Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    style: ElevatedButton.styleFrom(backgroundColor: primaryRed, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                    child: _isLoading 
-                      ? const Text("Entering LIFEOS...", style: TextStyle(color: Colors.white))
-                      : const Text("Enter LIFEOS", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      backgroundColor: const Color(0xFF0A0A0B),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              CustomPaint(
+                size: const Size(56, 56), 
+                painter: LifeOSLogoPainter(strokeColor: Colors.white.withOpacity(0.4), dotColor: primaryRed)
+              ),
+              const SizedBox(height: 24),
+              const Text('LIFEOS', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              const SizedBox(height: 8),
+              const Text('Your life, structured by intelligence', style: TextStyle(color: mutedText, fontSize: 14)),
+              const SizedBox(height: 60),
+              _buildTextField(_emailController, "Email", inputBackground, mutedText, primaryRed),
+              const SizedBox(height: 12),
+              _buildTextField(_passwordController, "Password", inputBackground, mutedText, primaryRed, isObscure: true),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryRed,
+                    disabledBackgroundColor: primaryRed.withOpacity(0.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    _isLoading ? "Entering LIFEOS" : "Enter LIFEOS",
+                    style: TextStyle(color: Colors.white.withOpacity(_isLoading ? 0.5 : 1.0), fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
-
-                // Footer
-                const SizedBox(height: 24),
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  TextButton(onPressed: widget.onSwitchToRegister, child: const Text("Create account", style: TextStyle(color: Colors.grey, fontSize: 12))),
-                  const Text("•", style: TextStyle(color: Colors.grey)),
-                  TextButton(onPressed: () {}, child: const Text("Forgot access", style: TextStyle(color: Colors.grey, fontSize: 12))),
-                ]),
-              ],
-            ),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(onTap: widget.onSwitchToRegister, child: const Text("Create account", style: TextStyle(color: mutedText, fontSize: 14))),
+                  const Padding(padding: EdgeInsets.symmetric(horizontal: 12.0), child: Text('•', style: TextStyle(color: mutedText))),
+                  const Text("Forgot access", style: TextStyle(color: mutedText, fontSize: 14)),
+                ],
+              ),
+              const Spacer(flex: 3),
+            ],
           ),
         ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String label) => InputDecoration(
-    hintText: label,
-    filled: true,
-    fillColor: const Color(0xFF1C1C1E),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-  );
+  void _handleLogin() async {
+    setState(() => _isLoading = true);
+    bool success = await AuthService().login(_emailController.text, _passwordController.text);
+    if (!mounted) return;
+    if (success) {
+      widget.onLoginSuccess();
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hint, Color bg, Color textCol, Color caret, {bool isObscure = false}) {
+    return Container(
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.04))),
+      child: TextField(
+        controller: controller,
+        obscureText: isObscure,
+        cursorColor: caret,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: textCol.withOpacity(0.5)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
 }

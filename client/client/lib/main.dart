@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/today_screen.dart';
 
 void main() {
-  // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const LifeOSApp());
 }
@@ -18,17 +17,14 @@ class LifeOSApp extends StatelessWidget {
     return MaterialApp(
       title: 'LifeOS',
       debugShowCheckedModeBanner: false,
-      // Apply a consistent Dark Theme to match the LifeOS aesthetic
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF000000),
+        scaffoldBackgroundColor: const Color(0xFF0A0A0B),
+        // Consistent theme colors across the app
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF3B30), // Your Primary Red
-          background: Color(0xFF000000),
-          surface: Color(0xFF1C1C1E), // Surface-1 equivalent
-        ),
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(letterSpacing: -0.5),
+          background: Color(0xFF0A0A0B),
+          surface: Color(0xFF121214),
+          primary: Color(0xFF510105),
         ),
       ),
       home: const AppRoot(),
@@ -36,7 +32,6 @@ class LifeOSApp extends StatelessWidget {
   }
 }
 
-/// The AppRoot manages the navigation state between Auth and Main App
 enum AppStatus { splash, authLogin, authRegister, authenticated }
 
 class AppRoot extends StatefulWidget {
@@ -53,50 +48,79 @@ class _AppRootState extends State<AppRoot> {
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 600),
-      switchInCurve: Curves.easeIn,
-      switchOutCurve: Curves.easeOut,
-      // The child is determined by the current _status
-      child: _buildCurrentScreen(),
+      child: _buildBody(),
     );
   }
 
-  Widget _buildCurrentScreen() {
+  Widget _buildBody() {
     switch (_status) {
       case AppStatus.splash:
         return SplashScreen(
           key: const ValueKey('splash'),
-          onComplete: () {
-            setState(() => _status = AppStatus.authLogin);
-          },
+          onComplete: () => setState(() => _status = AppStatus.authLogin),
         );
-
       case AppStatus.authLogin:
         return LoginScreen(
           key: const ValueKey('login'),
-          onLoginSuccess: () {
-            setState(() => _status = AppStatus.authenticated);
-          },
-          onSwitchToRegister: () {
-            setState(() => _status = AppStatus.authRegister);
-          },
+          onLoginSuccess: () => setState(() => _status = AppStatus.authenticated),
+          onSwitchToRegister: () => setState(() => _status = AppStatus.authRegister),
         );
-
       case AppStatus.authRegister:
         return RegisterScreen(
           key: const ValueKey('register'),
-          onRegisterSuccess: () {
-            // Usually after registration, you go to home or login
-            setState(() => _status = AppStatus.authenticated);
-          },
-          onSwitchToLogin: () {
-            setState(() => _status = AppStatus.authLogin);
-          },
+          onRegisterSuccess: () => setState(() => _status = AppStatus.authenticated),
+          onSwitchToLogin: () => setState(() => _status = AppStatus.authLogin),
         );
-
       case AppStatus.authenticated:
-        return const HomeScreen(
-          key: ValueKey('home'),
-        );
+        return const HomeScreen(key: ValueKey('home'));
     }
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> pages = [
+      TodayScreen(onNavigate: (s) => setState(() => _selectedIndex = 1)),
+      const Center(child: Text("Tasks Screen")),
+      const Center(child: Text("Goals Screen")),
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0B),
+      body: IndexedStack(index: _selectedIndex, children: pages),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0xFF1A1A1C), width: 1)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (i) => setState(() => _selectedIndex = i),
+          backgroundColor: const Color(0xFF0A0A0B),
+          selectedItemColor: Colors.white,
+          unselectedItemColor: const Color(0xFF404040),
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          selectedFontSize: 10,
+          unselectedFontSize: 10,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.panorama_fish_eye), label: "Today"),
+            BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded), label: "Tasks"),
+            BottomNavigationBarItem(icon: Icon(Icons.track_changes_rounded), label: "Goals"),
+          ],
+        ),
+      ),
+    );
   }
 }
