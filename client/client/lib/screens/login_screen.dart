@@ -4,7 +4,11 @@ import '../core/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess, onSwitchToRegister;
-  const LoginScreen({super.key, required this.onLoginSuccess, required this.onSwitchToRegister});
+  const LoginScreen({
+    super.key,
+    required this.onLoginSuccess,
+    required this.onSwitchToRegister,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -31,17 +35,44 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const Spacer(flex: 2),
               CustomPaint(
-                size: const Size(56, 56), 
-                painter: LifeOSLogoPainter(strokeColor: Colors.white.withOpacity(0.4), dotColor: primaryRed)
+                size: const Size(56, 56),
+                painter: LifeOSLogoPainter(
+                  strokeColor: Colors.white.withOpacity(0.4),
+                  dotColor: primaryRed,
+                ),
               ),
               const SizedBox(height: 24),
-              const Text('LIFEOS', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              const Text(
+                'LifeOS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
               const SizedBox(height: 8),
-              const Text('Your life, structured by intelligence', style: TextStyle(color: mutedText, fontSize: 14)),
+              const Text(
+                'Your life, structured by intelligence',
+                style: TextStyle(color: mutedText, fontSize: 14),
+              ),
               const SizedBox(height: 60),
-              _buildTextField(_emailController, "Email", inputBackground, mutedText, primaryRed),
+              _buildTextField(
+                _emailController,
+                "Email",
+                inputBackground,
+                mutedText,
+                primaryRed,
+              ),
               const SizedBox(height: 12),
-              _buildTextField(_passwordController, "Password", inputBackground, mutedText, primaryRed, isObscure: true),
+              _buildTextField(
+                _passwordController,
+                "Password",
+                inputBackground,
+                mutedText,
+                primaryRed,
+                isObscure: true,
+              ),
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
@@ -51,11 +82,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryRed,
                     disabledBackgroundColor: primaryRed.withOpacity(0.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: Text(
                     _isLoading ? "Entering LIFEOS" : "Enter LIFEOS",
-                    style: TextStyle(color: Colors.white.withOpacity(_isLoading ? 0.5 : 1.0), fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(_isLoading ? 0.5 : 1.0),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -63,9 +100,21 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  GestureDetector(onTap: widget.onSwitchToRegister, child: const Text("Create account", style: TextStyle(color: mutedText, fontSize: 14))),
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 12.0), child: Text('•', style: TextStyle(color: mutedText))),
-                  const Text("Forgot access", style: TextStyle(color: mutedText, fontSize: 14)),
+                  GestureDetector(
+                    onTap: widget.onSwitchToRegister,
+                    child: const Text(
+                      "Create account",
+                      style: TextStyle(color: mutedText, fontSize: 14),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Text('•', style: TextStyle(color: mutedText)),
+                  ),
+                  const Text(
+                    "Forgot access",
+                    style: TextStyle(color: mutedText, fontSize: 14),
+                  ),
                 ],
               ),
               const Spacer(flex: 3),
@@ -78,7 +127,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() async {
     setState(() => _isLoading = true);
-    bool success = await AuthService().login(_emailController.text, _passwordController.text);
+    bool success = await AuthService().login(
+      _emailController.text,
+      _passwordController.text,
+    );
     if (!mounted) return;
     if (success) {
       widget.onLoginSuccess();
@@ -87,9 +139,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, Color bg, Color textCol, Color caret, {bool isObscure = false}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint,
+    Color bg,
+    Color textCol,
+    Color caret, {
+    bool isObscure = false,
+  }) {
     return Container(
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white.withOpacity(0.04))),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.04)),
+      ),
       child: TextField(
         controller: controller,
         obscureText: isObscure,
@@ -98,7 +161,10 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: textCol.withOpacity(0.5)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 18,
+          ),
           border: InputBorder.none,
         ),
       ),
