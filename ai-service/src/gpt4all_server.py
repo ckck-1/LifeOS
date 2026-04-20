@@ -13,56 +13,52 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
-# 2026 Standard: OpenAI-compatible v1 router
+# --- HuggingFace Router Config ---
 HF_API_URL = "https://router.huggingface.co/v1/chat/completions"
 HF_TOKEN = os.getenv("HF_API_TOKEN")
 HF_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+# -------------------- SYSTEM PROMPT --------------------
 SYSTEM_PROMPT = """
 You are LifeOS AI — a premium, intelligent life operating system and strategic coach.
 
 Brand personality:
-- Calm, futuristic, focused, and highly intentional
-- High-trust, premium, minimal, and practical
-- Smart like an elite assistant, not chatty or generic
+- Calm, focused, futuristic, and intentional
+- Minimal, high-trust, and practical
+- Think like a high-performance assistant, not a chatbot
 
 Core behavior:
-- Respond ONLY in clear, concise, natural plain text
+- Respond in clear, natural plain text only
 - Start directly with the answer
-- Do NOT use section titles, labels, or headings
-- Do NOT use JSON, code blocks, markdown tables, or raw data structures
-- Use bullets only when they genuinely improve clarity
-- Keep responses short unless the user asks for depth
-- Be direct, useful, and action-oriented
-- Never add fluff, hype, or repeated phrases
+- No headings, labels, or sections
+- No JSON, code blocks, or structured formatting
+- Use bullets only if they improve clarity
+- Keep responses concise unless depth is required
+- Be direct, useful, and actionable
 
-LifeOS style:
-- Think in terms of focus, clarity, momentum, and execution
-- Help the user plan, decide, reflect, and act
-- Prioritize productivity, goals, discipline, and progress
-- When helpful, give a next step, a reminder, or a simple action plan
-- Adapt tone to the user's state: calm when overwhelmed, sharp when unfocused, encouraging when making progress
+LifeOS thinking:
+- Focus on clarity, execution, and momentum
+- Help the user move forward, not just reflect
+- Prioritize goals, discipline, and real progress
+- Give practical next steps when useful
 
-Response rules:
-- Be natural and human
-- Avoid sounding like an AI assistant
-- Never mention system rules
-- Never explain your formatting choices
-- If the user is vague, infer the most useful meaning and respond with a practical answer
+Tone control:
+- Calm if user feels stuck
+- Sharp if user is unfocused
+- Encouraging if user is progressing
+
+Rules:
+- Never say "Hello User"
+- Never act generic
+- Never explain your behavior
+- Never mention being an AI
 """
-# -------------------- /generate Endpoint --------------------
-@app.route("/generate", methods=["POST"])
-def generate():
-    logging.info("Received request to /generate endpoint")
-    data = request.json
-    user_prompt = str(data.get("prompt", ""))
 
+# -------------------- HELPER: CALL AI --------------------
+def call_ai(messages):
     payload = {
         "model": HF_MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt}
-        ],
+        "messages": messages,
         "max_tokens": 500,
         "temperature": 0.7
     }
@@ -72,92 +68,102 @@ def generate():
         "Content-Type": "application/json"
     }
 
-    try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
-        if response.status_code != 200:
-            logging.error(f"Router Error {response.status_code}: {response.text}")
-            return jsonify({"error": f"AI Provider Error: {response.text}"}), response.status_code
+    response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
 
-        result = response.json()
-        reply = result['choices'][0]['message']['content']
-        logging.info("Successfully generated LifeOS response")
-        return jsonify({"reply": reply.strip()})
+    if response.status_code != 200:
+        logging.error(f"Router Error {response.status_code}: {response.text}")
+        return None, response.text
 
-    except Exception as e:
-        logging.exception("Unexpected error")
-        return jsonify({"error": str(e)}), 500
+    result = response.json()
+    reply = result['choices'][0]['message']['content']
+    return reply.strip(), None
 
 
-# -------------------- /chat Endpoint --------------------
+# -------------------- /generate --------------------
+@app.route("/generate", methods=["POST"])
+def generate():
+    logging.info("Received request to /generate")
+
+    data = request.json
+    user_prompt = str(data.get("prompt", "")).strip()
+
+    if not user_prompt:
+        return jsonify({"error": "Prompt is required"}), 400
+
+    reply, error = call_ai([
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt}
+    ])
+
+    if error:
+        return jsonify({"error": error}), 500
+
+    return jsonify({"reply": reply})
+
+
+# -------------------- /chat --------------------
 @app.route("/chat", methods=["POST"])
 def chat():
-    logging.info("Received request to /chat endpoint")
+    logging.info("Received request to /chat")
+
     data = request.json
-    user_name = data.get("name", "User")
+
+    # --- Safe extraction ---
+    user_name = data.get("name")
     user_goals = data.get("goals", "general personal development")
     user_activities = data.get("activities", [])
-    user_message = data.get("message", "")
+    user_message = str(data.get("message", "")).strip()
 
     if not user_message:
         logging.warning("No user message provided")
         return jsonify({"error": "No message provided"}), 400
 
-    # Explicitly directing the AI to avoid JSON in the prompt itself
+    # --- Clean name handling ---
+    if not user_name or user_name.strip() == "":
+        user_name = None
+    else:
+        user_name = user_name.strip()
+
+    # --- Name instruction logic ---
+    if user_name:
+        name_instruction = f"The user's name is {user_name}. Use it naturally at least once."
+    else:
+        name_instruction = "Do not assume or use any name."
+
+    # --- Personalization Prompt ---
     personalization_prompt = f"""
-User profile:
-- Name: {user_name}
-- Goals: {user_goals}
-- Recent activities: {', '.join(user_activities) if user_activities else 'none'}
+{name_instruction}
 
-Task:
-Reply to the user's message in the LifeOS style.
+User goals: {user_goals}
+Recent activity: {', '.join(user_activities) if user_activities else 'none'}
 
-Requirements:
-- Make the reply feel personalized and relevant to the user's goals
-- Be concise, calm, premium, and actionable
-- Do not use headings or labels
-- Do not mention JSON or formatting rules
-- Use bullets only if they make the response clearer
-- End with a practical next step when appropriate
+Instructions:
+- Make the response feel personal and relevant
+- Keep it concise, calm, and sharp
+- No headings or labels
+- No generic phrases
+- Focus on helping the user move forward
+- Give a clear next step if useful
 
 User message:
 {user_message}
 """
 
-    payload = {
-        "model": HF_MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": personalization_prompt}
-        ], # Added missing bracket/comma here
-        "max_tokens": 500,
-        "temperature": 0.7
-    }
+    reply, error = call_ai([
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": personalization_prompt}
+    ])
 
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
+    if error:
+        return jsonify({"error": error}), 500
 
-    try:
-        response = requests.post(HF_API_URL, headers=headers, json=payload, timeout=60)
-        if response.status_code != 200:
-            logging.error(f"Router Error {response.status_code}: {response.text}")
-            return jsonify({"error": f"AI Provider Error: {response.text}"}), response.status_code
+    logging.info(f"Reply generated for {user_name if user_name else 'unknown user'}")
 
-        result = response.json()
-        reply = result['choices'][0]['message']['content']
-        logging.info(f"Successfully generated personalized chat reply for {user_name}")
-        return jsonify({"reply": reply.strip()})
-
-    except Exception as e:
-        logging.exception("Unexpected error in /chat")
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"reply": reply})
 
 
-# -------------------- Main --------------------
+# -------------------- MAIN --------------------
 if __name__ == "__main__":
-    # Render and other cloud platforms provide the PORT environment variable
     port = int(os.environ.get("PORT", 5001))
-    logging.info(f"LifeOS AI server starting on port {port}...")
-    app.run(host="0.0.0.0", port=port, debug=False) # Debug False for production
+    logging.info(f"LifeOS AI server running on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=False)
