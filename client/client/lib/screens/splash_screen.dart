@@ -17,8 +17,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
-    _pulse = Tween<double>(begin: 0.3, end: 0.6).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _controller = AnimationController(
+      vsync: this, 
+      duration: const Duration(seconds: 2)
+    )..repeat(reverse: true);
+    
+    _pulse = Tween<double>(begin: 0.4, end: 0.8).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut)
+    );
+    
     Timer(const Duration(milliseconds: 2800), widget.onComplete);
   }
 
@@ -30,22 +37,35 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Using the deep navy/black color from the screenshots
+    const Color scaffoldBg = Color(0xFF0B1220); 
+
     return Scaffold(
+      backgroundColor: scaffoldBg,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CustomPaint(
-              size: const Size(64, 64),
-              painter: LifeOSLogoPainter(strokeColor: theme.colorScheme.onBackground, dotColor: theme.colorScheme.primary),
+            // Standardizing text style to match "Onboarding 1.png"
+            Text(
+              'LifeOS',
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.2,
+              ),
             ),
-            const SizedBox(height: 32),
-            Text('LIFEOS', style: theme.textTheme.displayLarge),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             FadeTransition(
               opacity: _pulse,
-              child: Text('Initializing intelligence layer', style: theme.textTheme.bodySmall),
+              child: Text(
+                'Initializing intelligence layer',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 14,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
           ],
         ),
