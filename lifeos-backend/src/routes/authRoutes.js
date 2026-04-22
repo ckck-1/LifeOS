@@ -1,6 +1,5 @@
 const express = require("express");
 const { register, login, me } = require("./../controllers/authContoller.js");
-// Import your middleware to verify the JWT token
 const { authenticate } = require("../middleware/authMiddleware.js"); 
 
 const router = express.Router();
@@ -22,6 +21,15 @@ const router = express.Router();
  * required: true
  * content:
  * application/json:
+ * schema:
+ * type: object
+ * properties:
+ * name:
+ * type: string
+ * email:
+ * type: string
+ * password:
+ * type: string
  * example:
  * name: "CK"
  * email: "ck@example.com"
@@ -47,6 +55,13 @@ router.post("/register", register);
  * required: true
  * content:
  * application/json:
+ * schema:
+ * type: object
+ * properties:
+ * email:
+ * type: string
+ * password:
+ * type: string
  * example:
  * email: "ck@example.com"
  * password: "123456"
