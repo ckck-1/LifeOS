@@ -1,7 +1,9 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:frontendtwo/screens/SessionScreen.dart';
-import 'package:frontendtwo/screens/ai_chat.dart'; // IMPORT CHAT
+import 'package:frontendtwo/screens/ai_chat.dart';
+import 'package:frontendtwo/screens/weekly_screen.dart';
 import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
@@ -14,10 +16,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final String baseUrl = "https://lifeos-7nj8.onrender.com";
+
   String dailyFocusText = "Loading your daily focus...";
   String userName = "Loading...";
   List<dynamic> activeGoals = [];
   bool isLoading = true;
+
   int _currentIndex = 0;
 
   @override
@@ -31,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'Authorization': 'Bearer ${widget.token}',
       'Accept': 'application/json',
     };
+
     try {
       final responses = await Future.wait([
         http.get(Uri.parse('$baseUrl/ai/daily-focus'), headers: headers),
@@ -40,16 +45,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (mounted) {
         setState(() {
-          if (responses[0].statusCode == 200)
+          if (responses[0].statusCode == 200) {
             dailyFocusText =
                 json.decode(responses[0].body)['response'] ??
                 "Stay productive.";
-          if (responses[1].statusCode == 200)
+          }
+
+          if (responses[1].statusCode == 200) {
             activeGoals = json.decode(responses[1].body);
+          }
+
           if (responses[2].statusCode == 200) {
             final user = json.decode(responses[2].body);
             userName = user['name'] ?? user['firstName'] ?? "User";
           }
+
           isLoading = false;
         });
       }
@@ -75,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildHeader(brandGreen),
               _buildDailyFocusCard(brandBlue),
               const SizedBox(height: 32),
-              _buildQuickActions(brandBlue), // Shortcuts
+              _buildQuickActions(brandBlue),
               const SizedBox(height: 32),
               const Text(
                 "Active Goals",
@@ -175,7 +185,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _actionIcon("Weekly", Icons.calendar_today_outlined, blue, () {}),
+        _actionIcon("Weekly", Icons.calendar_today_outlined, blue, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WeeklyPlanScreen(token: widget.token),
+            ),
+          );
+        }),
         _actionIcon("AI Chat", Icons.auto_awesome, blue, () {
           Navigator.push(
             context,
@@ -225,6 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGoalsList(Color green) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -232,35 +250,24 @@ class _HomeScreenState extends State<HomeScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 20),
       itemBuilder: (context, i) {
         final goal = activeGoals[i];
+
         return Row(
           children: [
             SizedBox(
               width: 70,
               height: 70,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  CircularProgressIndicator(
-                    value:
-                        (goal['currentValue'] ?? 0) /
-                        (goal['targetValue'] ?? 1),
-                    strokeWidth: 8,
-                    color: green,
-                    backgroundColor: const Color(0xFF1D2635),
-                  ),
-                ],
+              child: CircularProgressIndicator(
+                value: (goal['currentValue'] ?? 0) / (goal['targetValue'] ?? 1),
+                strokeWidth: 8,
+                color: green,
+                backgroundColor: const Color(0xFF1D2635),
               ),
             ),
             const SizedBox(width: 20),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    goal['description'] ?? 'Goal',
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ],
+              child: Text(
+                goal['description'] ?? 'Goal',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
           ],
@@ -302,6 +309,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _showTaskSelector(BuildContext context, Color blue) async {
-    // ... existing _showTaskSelector code ...
+    // TODO: implement later
   }
 }

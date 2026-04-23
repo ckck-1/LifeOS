@@ -17,7 +17,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
   List<Map<String, dynamic>> _messages = [];
   bool _loading = false;
-  String username = "Sophie"; // Matching the name in the screenshot
+  String username = ""; // Matching the name in the screenshot
   bool _greetingAdded = false;
 
   @override
@@ -265,7 +265,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
                       cursorColor: userBubbleColor,
                       onSubmitted: (_) => _sendMessage(),
                       decoration: const InputDecoration(
-                        hintText: "Can you help me fix the spacing...",
+                        hintText: "How can I be more productive?",
                         hintStyle: TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 15,
