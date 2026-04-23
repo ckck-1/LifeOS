@@ -238,7 +238,9 @@ class _SessionScreenState extends State<SessionScreen> {
                       ),
                       const SizedBox(height: 20),
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () async {
+                          await _endAndCompleteTask(); // or create a separate "end only"
+                        },
                         child: const Text(
                           "Quit",
                           style: TextStyle(color: Colors.white54, fontSize: 16),

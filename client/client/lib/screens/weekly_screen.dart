@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // Add intl to your pubspec.yaml for easy dating
 
 class WeeklyPlanScreen extends StatefulWidget {
   final String token;
@@ -29,53 +30,70 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
     try {
       final response = await http.get(
         Uri.parse(url),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        final String fullResponse = data['response'] ?? "";
 
-        final List<String> dayLabels = [
-          "MO",
-          "TU",
-          "WE",
-          "TH",
-          "FR",
-          "SA",
-          "SU",
-        ];
+        // 1. Split the big string into individual days using Regex
+        // This looks for patterns like "- **Monday**" or "**Monday**"
+        final RegExp dayRegex = RegExp(
+          r'-?\s?\*\*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\*\*',
+        );
 
-        setState(() {
-          _plans = [
-            {
-              "day": dayLabels[0],
-              "date": "04/23/2026",
-              "content": data['response']?.toString() ?? "No content available",
-              "isExpanded": false,
-            },
-            {
-              "day": dayLabels[1],
-              "date": "04/24/2026",
-              "content":
-                  "Started with heat mapping. Users were clicking 'Learn More' but bouncing at 8 seconds. The button worked, but the landing content didn't match expectations.",
-              "isExpanded": false,
-            },
-            {
-              "day": dayLabels[2],
-              "date": "04/25/2026",
-              "content":
-                  "Solution: Rewrote copy to match button promise. Added social proof above fold. A/B tested 3 variants. Simple changes, massive impact ✨",
-              "isExpanded": false,
-            },
-          ];
+        final List<String> sections = fullResponse.split(dayRegex);
+        final Iterable<Match> matches = dayRegex.allMatches(fullResponse);
 
-          _isLoading = false;
-        });
+        List<Map<String, dynamic>> parsedPlans = [];
+        List<String> foundDays = matches.map((m) => m.group(1)!).toList();
+
+        // 2. Map the split sections to our list format
+        // sections[0] is usually empty or intro text, so we start at index 1
+        for (int i = 0; i < foundDays.length; i++) {
+          if (i + 1 < sections.length) {
+            String content = sections[i + 1].trim();
+            // Clean up leading dashes or extra newlines
+            content = content.replaceFirst(RegExp(r'^\n+'), '').trim();
+
+            parsedPlans.add({
+              "day": foundDays[i]
+                  .substring(0, 2)
+                  .toUpperCase(), // "MO", "TU", etc.
+              "date": DateFormat(
+                'MM/dd/yyyy',
+              ).format(DateTime.now().add(Duration(days: i))),
+              "content": content,
+              "isExpanded": i == 0, // Expand the first day by default
+            });
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _plans = parsedPlans.isEmpty
+                ? [
+                    {
+                      "day": "!!",
+                      "date": "Error",
+                      "content": "Could not parse plan",
+                      "isExpanded": true,
+                    },
+                  ]
+                : parsedPlans;
+            _isLoading = false;
+          });
+        }
       } else {
-        setState(() => _isLoading = false);
+        if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      debugPrint("Fetch error: $e");
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -86,24 +104,19 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: CircleAvatar(backgroundColor: Colors.white, radius: 15),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Weekly Plan",
           style: TextStyle(
-            color: Colors.white70,
+            color: Colors.white,
             fontSize: 18,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(backgroundColor: Colors.white, radius: 15),
-          ),
-        ],
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -114,16 +127,15 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
               color: accentBlue,
               fontSize: 12,
               fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
             ),
           ),
+          const SizedBox(height: 20),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator(color: accentBlue))
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     itemCount: _plans.length,
                     itemBuilder: (context, index) => _buildTimelineItem(index),
                   ),
@@ -135,89 +147,98 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
 
   Widget _buildTimelineItem(int index) {
     final plan = _plans[index];
-
-    final String day = plan['day']?.toString() ?? '';
-    final String date = plan['date']?.toString() ?? '';
-    final String content = plan['content']?.toString() ?? '';
     final bool isExpanded = plan['isExpanded'] ?? false;
+    final bool isLast = index == _plans.length - 1;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // LEFT COLUMN: Bubble and Line
         Column(
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 45,
+              height: 45,
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(color: accentBlue, width: 2),
+                boxShadow: [
+                  BoxShadow(color: accentBlue.withOpacity(0.3), blurRadius: 10),
+                ],
               ),
               child: Center(
                 child: Text(
-                  day,
+                  plan['day'],
                   style: const TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 14,
                   ),
                 ),
               ),
             ),
-            if (index != _plans.length - 1)
+            if (!isLast)
               Container(
                 width: 2,
-                height: isExpanded ? 200 : 100,
+                height: isExpanded
+                    ? 220
+                    : 80, // Dynamic height based on content
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [accentBlue, accentBlue.withOpacity(0.05)],
+                    colors: [accentBlue, accentBlue.withOpacity(0.01)],
                   ),
                 ),
               ),
           ],
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 20),
 
+        // RIGHT COLUMN: Content
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                date,
+                plan['date'],
                 style: const TextStyle(color: Colors.white38, fontSize: 12),
               ),
-              const SizedBox(height: 6),
-
-              AnimatedCrossFade(
-                duration: const Duration(milliseconds: 300),
-                crossFadeState: isExpanded
-                    ? CrossFadeState.showSecond
-                    : CrossFadeState.showFirst,
-                firstChild: Text(
-                  content,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    height: 1.5,
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () =>
+                    setState(() => _plans[index]['isExpanded'] = !isExpanded),
+                child: AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 300),
+                  crossFadeState: isExpanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  firstChild: Text(
+                    plan['content'].replaceAll(
+                      RegExp(r'[*#]'),
+                      '',
+                    ), // Clean formatting symbols
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      height: 1.6,
+                    ),
                   ),
-                ),
-                secondChild: Text(
-                  content,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    height: 1.5,
+                  secondChild: Text(
+                    plan['content'].replaceAll(RegExp(r'[*#]'), ''),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      height: 1.6,
+                    ),
                   ),
                 ),
               ),
-
               _buildActionRow(index, isExpanded),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -227,28 +248,22 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
 
   Widget _buildActionRow(int index, bool isExpanded) {
     return Padding(
-      padding: const EdgeInsets.only(top: 12.0),
+      padding: const EdgeInsets.only(top: 15.0),
       child: Row(
         children: [
-          const Icon(Icons.favorite_border, color: Colors.white38, size: 20),
+          const Icon(Icons.favorite_border, color: Colors.white24, size: 18),
+          const SizedBox(width: 15),
+          const Icon(Icons.share_outlined, color: Colors.white24, size: 18),
           const Spacer(),
-          const Icon(
-            Icons.check_circle_outline,
-            color: Colors.white38,
-            size: 20,
-          ),
-          const SizedBox(width: 20),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _plans[index]['isExpanded'] = !isExpanded;
-              });
-            },
-            child: Icon(
-              isExpanded ? Icons.close_fullscreen : Icons.open_in_full,
-              color: Colors.white38,
-              size: 18,
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: Icon(
+              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              color: accentBlue,
             ),
+            onPressed: () =>
+                setState(() => _plans[index]['isExpanded'] = !isExpanded),
           ),
         ],
       ),

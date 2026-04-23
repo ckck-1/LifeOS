@@ -324,6 +324,83 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _showTaskSelector(BuildContext context, Color blue) async {
-    // TODO: implement later
+    final headers = {
+      'Authorization': 'Bearer ${widget.token}',
+      'Accept': 'application/json',
+    };
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/tasks'),
+        headers: headers,
+      );
+
+      if (response.statusCode != 200) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Failed to load tasks")));
+        return;
+      }
+
+      final List tasks = json.decode(response.body);
+
+      if (tasks.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("No tasks available")));
+        return;
+      }
+
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF1D2635),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (context) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: ListView.builder(
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                final task = tasks[index];
+
+                return ListTile(
+                  title: Text(
+                    task['title'] ?? 'Untitled Task',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  subtitle: Text(
+                    task['type'] ?? 'focus',
+                    style: const TextStyle(color: Colors.white54),
+                  ),
+                  trailing: const Icon(Icons.play_arrow, color: Colors.white),
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SessionScreen(
+                          token: widget.token,
+                          taskId: task['id'].toString(),
+                          taskTitle: task['title'] ?? 'Task',
+                          type: task['type'] ?? 'focus',
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint("Task fetch error: $e");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Something went wrong")));
+    }
   }
 }
