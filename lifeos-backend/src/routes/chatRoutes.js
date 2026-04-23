@@ -16,6 +16,8 @@ const authMiddleware = require("../middlewares/authMiddleware");
  *   post:
  *     summary: Chat with LifeOS AI
  *     tags: [Chat]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
