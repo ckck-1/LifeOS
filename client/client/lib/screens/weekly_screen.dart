@@ -27,6 +27,16 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
   Future<void> _fetchPlans() async {
     const url = 'https://lifeos-7nj8.onrender.com/ai/weekly-plan';
 
+    const days = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+
     try {
       final response = await http.get(
         Uri.parse(url),
@@ -38,53 +48,66 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final String fullResponse = data['response'] ?? "";
+        final String text = (data['response'] ?? "").toString();
 
-        // 1. Split the big string into individual days using Regex
-        // This looks for patterns like "- **Monday**" or "**Monday**"
-        final RegExp dayRegex = RegExp(
-          r'-?\s?\*\*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\*\*',
-        );
+        final Map<String, String> parsedMap = {};
+        String? currentDay;
 
-        final List<String> sections = fullResponse.split(dayRegex);
-        final Iterable<Match> matches = dayRegex.allMatches(fullResponse);
+        // Split into clean lines
+        final lines = text
+            .replaceAll('\r', '')
+            .split('\n')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
 
-        List<Map<String, dynamic>> parsedPlans = [];
-        List<String> foundDays = matches.map((m) => m.group(1)!).toList();
+        for (final line in lines) {
+          final normalized = line.toLowerCase();
 
-        // 2. Map the split sections to our list format
-        // sections[0] is usually empty or intro text, so we start at index 1
-        for (int i = 0; i < foundDays.length; i++) {
-          if (i + 1 < sections.length) {
-            String content = sections[i + 1].trim();
-            // Clean up leading dashes or extra newlines
-            content = content.replaceFirst(RegExp(r'^\n+'), '').trim();
+          // Detect day headers in ANY format
+          String? detectedDay;
+          for (final day in days) {
+            if (normalized.contains(day.toLowerCase())) {
+              detectedDay = day;
+              break;
+            }
+          }
 
-            parsedPlans.add({
-              "day": foundDays[i]
-                  .substring(0, 2)
-                  .toUpperCase(), // "MO", "TU", etc.
-              "date": DateFormat(
-                'MM/dd/yyyy',
-              ).format(DateTime.now().add(Duration(days: i))),
-              "content": content,
-              "isExpanded": i == 0, // Expand the first day by default
-            });
+          if (detectedDay != null &&
+              (line.contains(':') ||
+                  line.endsWith(':') ||
+                  line.toUpperCase() == line ||
+                  line.contains(detectedDay))) {
+            currentDay = detectedDay;
+            parsedMap[currentDay] = "";
+          } else if (currentDay != null) {
+            parsedMap[currentDay] = "${parsedMap[currentDay] ?? ""} $line"
+                .trim();
           }
         }
 
+        // Build final list in correct order
+        final now = DateTime.now();
+
+        final parsedPlans = days.asMap().entries.map((entry) {
+          final index = entry.key;
+          final day = entry.value;
+
+          return {
+            "day": day.substring(0, 2).toUpperCase(),
+            "date": DateFormat(
+              'MM/dd/yyyy',
+            ).format(now.add(Duration(days: index))),
+            "content": (parsedMap[day] ?? "No tasks generated")
+                .replaceAll(RegExp(r'[*#-]'), '')
+                .trim(),
+            "isExpanded": index == 0,
+          };
+        }).toList();
+
         if (mounted) {
           setState(() {
-            _plans = parsedPlans.isEmpty
-                ? [
-                    {
-                      "day": "!!",
-                      "date": "Error",
-                      "content": "Could not parse plan",
-                      "isExpanded": true,
-                    },
-                  ]
-                : parsedPlans;
+            _plans = parsedPlans;
             _isLoading = false;
           });
         }
