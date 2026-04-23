@@ -60,3 +60,8 @@ async function dailyFocus(req, res) {
     res.status(500).json({ success: false, message: err.message });
   }
 }
+
+module.exports = {
+  weeklyPlan,
+  dailyFocus,
+};
