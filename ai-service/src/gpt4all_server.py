@@ -108,59 +108,59 @@ def chat():
 
     data = request.json
 
-    # --- Safe extraction ---
     user_name = data.get("name")
     user_goals = data.get("goals", "general personal development")
     user_activities = data.get("activities", [])
     user_message = str(data.get("message", "")).strip()
 
+    # 🔥 NEW: conversation history from Node
+    history = data.get("history", [])
+
     if not user_message:
-        logging.warning("No user message provided")
         return jsonify({"error": "No message provided"}), 400
 
-    # --- Clean name handling ---
-    if not user_name or user_name.strip() == "":
-        user_name = None
-    else:
-        user_name = user_name.strip()
-
-    # --- Name instruction logic ---
-    if user_name:
-        name_instruction = f"The user's name is {user_name}. Use it naturally at least once."
+    # --- Name handling ---
+    if user_name and user_name.strip():
+        name_instruction = f"The user's name is {user_name.strip()}. Use it naturally once in conversation."
     else:
         name_instruction = "Do not assume or use any name."
 
-    # --- Personalization Prompt ---
-    personalization_prompt = f"""
-{name_instruction}
+    # --- System message (your personality stays same) ---
+    messages = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT + f"""
 
+{name_instruction}
 User goals: {user_goals}
 Recent activity: {', '.join(user_activities) if user_activities else 'none'}
-
-Instructions:
-- Make the response feel personal and relevant
-- Keep it concise, calm, and sharp
-- No headings or labels
-- No generic phrases
-- Focus on helping the user move forward
-- Give a clear next step if useful
-
-User message:
-{user_message}
 """
+        }
+    ]
 
-    reply, error = call_ai([
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": personalization_prompt}
-    ])
+    # 🔥 NEW: inject conversation memory
+    for msg in history:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if content:
+            messages.append({
+                "role": role,
+                "content": content
+            })
+
+    # 🔥 current message goes last
+    messages.append({
+        "role": "user",
+        "content": user_message
+    })
+
+    # --- Call AI ---
+    reply, error = call_ai(messages)
 
     if error:
         return jsonify({"error": error}), 500
 
-    logging.info(f"Reply generated for {user_name if user_name else 'unknown user'}")
-
     return jsonify({"reply": reply})
-
 
 # -------------------- MAIN --------------------
 if __name__ == "__main__":

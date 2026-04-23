@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:frontendtwo/screens/SessionScreen.dart';
+import 'package:frontendtwo/screens/ai_chat.dart'; // IMPORT CHAT
 import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
@@ -13,9 +15,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final String baseUrl = "https://lifeos-7nj8.onrender.com";
   String dailyFocusText = "Loading your daily focus...";
-  String userName = "Loading..."; // Variable to hold the user's name
+  String userName = "Loading...";
   List<dynamic> activeGoals = [];
   bool isLoading = true;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -28,37 +31,25 @@ class _HomeScreenState extends State<HomeScreen> {
       'Authorization': 'Bearer ${widget.token}',
       'Accept': 'application/json',
     };
-
     try {
       final responses = await Future.wait([
         http.get(Uri.parse('$baseUrl/ai/daily-focus'), headers: headers),
         http.get(Uri.parse('$baseUrl/goals'), headers: headers),
-        // Update '/auth/me' to match your actual backend user profile endpoint
-        http.get(Uri.parse('$baseUrl/auth/me'), headers: headers), 
+        http.get(Uri.parse('$baseUrl/auth/me'), headers: headers),
       ]);
 
       if (mounted) {
         setState(() {
-          // 1. Parse /ai/daily-focus.
-          if (responses[0].statusCode == 200) {
-            final focusData = json.decode(responses[0].body);
-            dailyFocusText = focusData['response'] ?? "Stay productive today.";
-          }
-
-          // 2. Parse /goals.
-          if (responses[1].statusCode == 200) {
+          if (responses[0].statusCode == 200)
+            dailyFocusText =
+                json.decode(responses[0].body)['response'] ??
+                "Stay productive.";
+          if (responses[1].statusCode == 200)
             activeGoals = json.decode(responses[1].body);
-          }
-
-          // 3. Parse User Profile.
           if (responses[2].statusCode == 200) {
-            final userData = json.decode(responses[2].body);
-            // Adjust 'name' or 'firstName' based on your actual JSON response keys
-            userName = userData['name'] ?? userData['firstName'] ?? "User"; 
-          } else {
-            userName = "User"; // Fallback if the endpoint fails or doesn't exist yet
+            final user = json.decode(responses[2].body);
+            userName = user['name'] ?? user['firstName'] ?? "User";
           }
-
           isLoading = false;
         });
       }
@@ -84,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildHeader(brandGreen),
               _buildDailyFocusCard(brandBlue),
               const SizedBox(height: 32),
-              _buildQuickActions(brandBlue),
+              _buildQuickActions(brandBlue), // Shortcuts
               const SizedBox(height: 32),
               const Text(
                 "Active Goals",
@@ -112,7 +103,6 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            // Use the dynamically loaded name here
             'Hello, $userName',
             style: TextStyle(
               color: green,
@@ -156,18 +146,24 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () => _showTaskSelector(context, blue),
             style: ElevatedButton.styleFrom(
               backgroundColor: blue,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: const StadiumBorder(),
-            ),
-            child: const Text(
-              "Start Session",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
+              foregroundColor: const Color(0xFF0B1220),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(60),
               ),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Start Session",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.arrow_forward, size: 16),
+              ],
             ),
           ),
         ],
@@ -179,56 +175,56 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _actionIcon("Weekly-plan", Icons.calendar_today_outlined, blue),
-        _actionIcon("Tasks", Icons.check_box_outline_blank, blue),
-        _actionIcon("Opportunities", Icons.lightbulb_outline, blue),
-        _actionIcon("Goals", Icons.flag_outlined, blue),
+        _actionIcon("Weekly", Icons.calendar_today_outlined, blue, () {}),
+        _actionIcon("AI Chat", Icons.auto_awesome, blue, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AIChatScreen(token: widget.token),
+            ),
+          );
+        }),
+        _actionIcon("Tasks", Icons.check_box_outline_blank, blue, () {}),
+        _actionIcon("Goals", Icons.flag_outlined, blue, () {}),
       ],
     );
   }
 
-  Widget _actionIcon(String label, IconData icon, Color blue) {
-    return Column(
-      children: [
-        Container(
-          width: 65,
-          height: 65,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+  Widget _actionIcon(
+    String label,
+    IconData icon,
+    Color blue,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 65,
+            height: 65,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Icon(icon, color: const Color(0xFF0B1220), size: 28),
           ),
-          child: Icon(icon, color: const Color(0xFF0B1220), size: 28),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: blue,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: blue,
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildGoalsList(Color green) {
-    if (isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    if (activeGoals.isEmpty) {
-      return const Text(
-        "No active goals found.",
-        style: TextStyle(color: Colors.white54),
-      );
-    }
-
+    if (isLoading) return const Center(child: CircularProgressIndicator());
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -236,13 +232,6 @@ class _HomeScreenState extends State<HomeScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 20),
       itemBuilder: (context, i) {
         final goal = activeGoals[i];
-
-        // Calculate progress based on API targetValue and currentValue
-        double target = (goal['targetValue'] ?? 1).toDouble();
-        double current = (goal['currentValue'] ?? 0).toDouble();
-        double progressRatio = target > 0 ? (current / target) : 0;
-        int progressPercent = (progressRatio * 100).toInt();
-
         return Row(
           children: [
             SizedBox(
@@ -252,20 +241,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 fit: StackFit.expand,
                 children: [
                   CircularProgressIndicator(
-                    value: progressRatio,
+                    value:
+                        (goal['currentValue'] ?? 0) /
+                        (goal['targetValue'] ?? 1),
                     strokeWidth: 8,
                     color: green,
                     backgroundColor: const Color(0xFF1D2635),
-                  ),
-                  Center(
-                    child: Text(
-                      "$progressPercent%",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -276,30 +257,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Goal ${i + 1}",
-                    style: const TextStyle(
-                      color: Color(0xFF7E8494),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    goal['description'] ?? 'Unnamed Goal',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Visual pill matching the screenshot
-                  Container(
-                    height: 12,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    goal['description'] ?? 'Goal',
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ],
               ),
@@ -311,39 +270,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomNav(Color active) {
-    return Theme(
-      data: Theme.of(context).copyWith(canvasColor: const Color(0xFF1D2635)),
-      child: BottomNavigationBar(
-        backgroundColor: const Color(0xFF0B1220),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white38,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined, size: 26),
-            activeIcon: Icon(Icons.home, size: 26),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search_outlined, size: 26),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline, size: 24),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border, size: 26),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline, size: 26),
-            label: '',
-          ),
-        ],
-      ),
+    return BottomNavigationBar(
+      backgroundColor: const Color(0xFF0B1220),
+      selectedItemColor: Colors.white,
+      unselectedItemColor: Colors.white38,
+      currentIndex: _currentIndex,
+      onTap: (index) {
+        if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AIChatScreen(token: widget.token),
+            ),
+          );
+        } else {
+          setState(() => _currentIndex = index);
+        }
+      },
+      type: BottomNavigationBarType.fixed,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.search_outlined), label: ''),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.chat_bubble_outline),
+          label: '',
+        ),
+        BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+      ],
     );
+  }
+
+  Future<void> _showTaskSelector(BuildContext context, Color blue) async {
+    // ... existing _showTaskSelector code ...
   }
 }

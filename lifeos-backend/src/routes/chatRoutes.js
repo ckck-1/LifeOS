@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const chatController = require("../controllers/chatController");
+const authMiddleware = require("../middleware/authMiddleware");
 
 /**
  * @swagger
@@ -29,6 +30,6 @@ const chatController = require("../controllers/chatController");
  *             example:
  *               reply: "Focus on high-impact tasks first."
  */
-router.post("/", chatController.chatWithAI);
+router.post("/", authMiddleware, chatController.chatWithAI);
 
 module.exports = router;
