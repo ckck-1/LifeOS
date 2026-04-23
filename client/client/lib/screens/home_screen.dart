@@ -37,40 +37,55 @@ class _HomeScreenState extends State<HomeScreen> {
     };
 
     try {
+      // 1. Trigger all requests in parallel for maximum efficiency
       final responses = await Future.wait([
         http.get(Uri.parse('$baseUrl/ai/daily-focus'), headers: headers),
         http.get(Uri.parse('$baseUrl/goals'), headers: headers),
         http.get(Uri.parse('$baseUrl/auth/me'), headers: headers),
       ]);
 
+      // 2. Check if the widget is still in the tree before updating state
+      if (!mounted) return;
+
+      setState(() {
+        // --- Handle Daily Focus Response ---
+        if (responses[0].statusCode == 200) {
+          final focusData = json.decode(responses[0].body);
+          // Check for 'response' key from your backend JSON
+          dailyFocusText =
+              focusData['response'] ?? "Focus on your top priority task today.";
+        } else {
+          dailyFocusText = "Plan your day and stay productive.";
+        }
+
+        // --- Handle Goals Response ---
+        if (responses[1].statusCode == 200) {
+          activeGoals = json.decode(responses[1].body);
+        }
+
+        // --- Handle User Profile Response ---
+        if (responses[2].statusCode == 200) {
+          final user = json.decode(responses[2].body);
+          // Support multiple potential name keys from your backend
+          userName = user['name'] ?? user['firstName'] ?? "User";
+        }
+
+        isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Dashboard Fetch Error: $e");
       if (mounted) {
         setState(() {
-          if (responses[0].statusCode == 200) {
-            dailyFocusText =
-                json.decode(responses[0].body)['response'] ??
-                "Stay productive.";
-          }
-
-          if (responses[1].statusCode == 200) {
-            activeGoals = json.decode(responses[1].body);
-          }
-
-          if (responses[2].statusCode == 200) {
-            final user = json.decode(responses[2].body);
-            userName = user['name'] ?? user['firstName'] ?? "User";
-          }
-
+          dailyFocusText = "Could not load focus.";
           isLoading = false;
         });
       }
-    } catch (e) {
-      if (mounted) setState(() => isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color scaffoldBg = Color(0xFF0B1220);
+    const Color scaffoldBg = Color(0xFF0F172A);
     const Color brandBlue = Color(0xFF40C4FF);
     const Color brandGreen = Color(0xFF4CAF50);
 

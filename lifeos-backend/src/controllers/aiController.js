@@ -38,11 +38,33 @@ async function weeklyPlan(req, res) {
     res.status(500).json({ success: false, message: err.message });
   }
 }
-
 async function dailyFocus(req, res) {
   try {
+    const userId = req.user.id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. Efficiency Check: Look for a focus already generated today
+    const existingFocus = await prisma.aIInsight.findFirst({
+      where: {
+        userId: userId,
+        type: "daily-focus",
+        createdAt: { gte: today },
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (existingFocus) {
+      // Return cached version immediately
+      return res.json({ 
+        success: true, 
+        response: existingFocus.content.text 
+      });
+    }
+
+    // 2. Fallback: If none exists, generate via AI
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: userId },
       include: { tasks: true },
     });
 
@@ -50,12 +72,17 @@ async function dailyFocus(req, res) {
     const aiResponse = await callAI(prompt);
 
     if (aiResponse) {
-      await prisma.aiInsight.create({
-        data: { userId: req.user.id, type: "daily-focus", content: { text: aiResponse } }
+      const saved = await prisma.aIInsight.create({
+        data: { 
+          userId: userId, 
+          type: "daily-focus", 
+          content: { text: aiResponse } 
+        }
       });
+      return res.json({ success: true, response: aiResponse });
     }
 
-    res.json({ success: true, response: aiResponse });
+    res.status(500).json({ success: false, message: "AI generation failed" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
