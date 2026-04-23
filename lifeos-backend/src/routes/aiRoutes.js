@@ -5,7 +5,7 @@ const authMiddleware = require("../middlewares/authMiddleware.js");
 const {
   weeklyPlan,
   dailyFocus,
-  opportunities,
+  // opportunities,
 } = require("../controllers/aiController.js");
 
 /**
@@ -72,6 +72,6 @@ router.get("/daily-focus", authMiddleware, dailyFocus);
  *                 - title: "Freelance Web Dev"
  *                   description: "Build websites for local businesses"
  */
-router.get("/opportunities", authMiddleware, opportunities);
+// router.get("/opportunities", authMiddleware, opportunities);
 
 module.exports = router;
