@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontendtwo/screens/SessionScreen.dart';
 import 'package:frontendtwo/screens/ai_chat.dart';
+import 'package:frontendtwo/screens/task_screen.dart';
 import 'package:frontendtwo/screens/weekly_screen.dart';
 import 'package:http/http.dart' as http;
 
@@ -216,7 +217,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }),
-        _actionIcon("Tasks", Icons.check_box_outline_blank, blue, () {}),
+        _actionIcon("Tasks", Icons.checklist_rounded, blue, () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TaskScreen(token: widget.token),
+            ),
+          );
+        }),
         _actionIcon("Goals", Icons.flag_outlined, blue, () {}),
       ],
     );
