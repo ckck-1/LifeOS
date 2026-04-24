@@ -4,6 +4,7 @@ const authenticate = require("../middlewares/authMiddleware.js");
 
 const router = express.Router();
 
+
 router.use(authenticate);
 
 /**

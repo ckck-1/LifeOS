@@ -62,5 +62,9 @@ async function getGoals(req, res) {
 
   res.json(goals);
 }
+module.exports = {
+  addGoal,
+  getGoals,
+  updateGoalProgress,
+};
 
-module.exports = { addGoal, getGoals };
