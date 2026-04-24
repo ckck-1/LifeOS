@@ -17,6 +17,7 @@ const chatRoutes = require("./../lifeos-backend/src/routes/chatRoutes")
 
 // Error handler
 const errorHandler = require("../lifeos-backend/src/middlewares/errorHandler");
+const startCleanupJob = require("./src/jobs/cleanup");
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use(errorHandler);
 // Create HTTP server for Socket.io
 const server = http.createServer(app);
 initSocket(server);
+startCleanupJob();
 
 // Start server
 const PORT = process.env.PORT || 5000;

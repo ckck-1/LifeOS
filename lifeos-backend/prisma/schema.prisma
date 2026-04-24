@@ -31,7 +31,10 @@ model Goal {
   type         String
   description  String
   targetValue  Int?
-  currentValue Int?     @default(0)
+  currentValue Int      @default(0)
+  progress     Float    @default(0)   // 👈 %
+  status       String   @default("active") // active | completed | expired
+  expiresAt    DateTime? // 👈 instead of delete
   priority     Int      @default(1)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -50,6 +53,7 @@ model Task {
   startTime    DateTime?
   endTime      DateTime?
   duration     Int? // seconds
+  deleteAt     DateTime? // 👈 NEW
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
