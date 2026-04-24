@@ -1,5 +1,10 @@
 const express = require("express");
-const { addGoal, getGoals } = require("../controllers/goalController");
+const {
+  addGoal,
+  getGoals,
+  updateGoalProgress,
+} = require("../controllers/goalController");
+
 const authenticate = require("../middlewares/authMiddleware.js");
 
 const router = express.Router();
@@ -49,5 +54,29 @@ router.post("/", addGoal);
  *         description: List of goals
  */
 router.get("/", getGoals);
+
+/**
+ * @swagger
+ * /goals/{id}/progress:
+ *   patch:
+ *     summary: Update goal progress
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             value: 3
+ *     responses:
+ *       200:
+ *         description: Goal progress updated
+ */
+router.patch("/:id/progress", updateGoalProgress);
 
 module.exports = router;
