@@ -38,6 +38,8 @@ No explanations, no commentary, no extra text
 No formatting except line breaks
 Keep everything short and direct
 
+ATTENTION=>If user needs daily plan please make it as short as possible 
+
 Weekly format (mandatory):
 Monday:
 Tuesday:
