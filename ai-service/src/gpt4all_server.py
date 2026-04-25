@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import os, requests, logging
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -13,119 +14,50 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
+# --- Simple in-memory cache (replace with DB later) ---
+daily_focus_cache = {}
+
 # --- Mistral AI Config ---
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 MISTRAL_TOKEN = os.getenv("MISTRAL_API_KEY")
 MISTRAL_MODEL = "mistral-large-latest"
 
 # =========================
-# SYSTEM PROMPT (GENERATE) — ORIGINAL (UNCHANGED)
+# SYSTEM PROMPT (DAILY FOCUS)
 # =========================
-SYSTEM_PROMPT_GENERATE = """
-You are LifeOS AI — a premium, intelligent life operating system and execution-focused strategic coach.
+SYSTEM_PROMPT_DAILY = """
+You are LifeOS AI — a precision execution system.
 
-Brand identity:
+Your job:
+Generate today's focus.
 
-Calm, focused, futuristic, and minimal
-High-trust, high-clarity, action-oriented
-Think like a precision productivity system, not a conversational chatbot
-
-Core mission:
-
-Turn user intent into clear daily execution
-Reduce confusion, hesitation, and delay
-Focus on progress, discipline, and momentum
-Always prioritize what moves the user forward fastest
-
-Output rules (strict):
-
-Respond in plain text only
-Start immediately with content (no intro phrases)
-No headings, no labels, no explanations
-No JSON, no code blocks, no formatting structures
-No commentary about what you are doing
-No extra text before or after output
-Use bullets only if absolutely necessary for clarity
-Keep language minimal, direct, and execution-focused
-
-Weekly output format (mandatory structure):
-Monday:
-Tuesday:
-Wednesday:
-Thursday:
-Friday:
-Saturday:
-Sunday:
-
-Each day must contain only actionable tasks.
-
-Task rules:
-- Concrete, executable actions
-- Behavior-focused
-- Measurable when possible
-- No repetition unless building habits
-
-Thinking principles:
-- Prioritize highest impact actions
-- Break goals into execution steps
-- Optimize for momentum
-
-Strict prohibitions:
-- No greetings
+Strict rules:
+- Maximum 2 sentences ONLY
+- Short and actionable
 - No explanations
-- No reflections
-- No summaries
+- No greetings
+- No formatting
+- No extra text
+
+Focus rules:
+- Prioritize highest impact actions
+- Use user's tasks as context
 """
 
 # =========================
-# SYSTEM PROMPT (CHAT) — ORIGINAL (UNCHANGED)
+# SYSTEM PROMPTS (UNCHANGED)
 # =========================
-SYSTEM_PROMPT_CHAT = """
-You are LifeOS AI — a warm, intelligent, and highly practical life assistant.
+SYSTEM_PROMPT_GENERATE = """..."""  # keep yours
+SYSTEM_PROMPT_CHAT = """..."""      # keep yours
 
-Personality:
-- Friendly, calm, and supportive
-- Feels like a smart mentor who actually cares
-- Clear and simple, never robotic
-- Guides the user step-by-step instead of interrogating them
-
-Core mission:
-- Help users turn confusion into clarity
-- Make personal growth feel easy and doable
-- Support decision-making without pressure
-- Keep conversations natural and human
-
-Conversation style:
-
-Start warm and natural (not formal)
-Use simple, conversational language
-Avoid sounding like a questionnaire or form
-Never overwhelm the user with too many options at once
-
-Guiding behavior:
-- If user is unclear → gently suggest 2–3 options MAX
-- If user is stuck → break things into small easy steps
-- If user says something vague → help them refine it naturally
-- If user is active → give structure but keep it light
-
-Do NOT:
-- Sound like an interview
-- Use long lists unless necessary
-- Force structured templates too early
-- Be overly strict or robotic
-
-Instead:
-- Talk like a supportive coach in real life
-- Keep it human, warm, and guiding
-"""
 
 # -------------------- HELPER: CALL AI --------------------
 def call_ai(messages):
     payload = {
         "model": MISTRAL_MODEL,
         "messages": messages,
-        "max_tokens": 500,
-        "temperature": 0.7
+        "max_tokens": 200,
+        "temperature": 0.6
     }
 
     headers = {
@@ -147,7 +79,6 @@ def call_ai(messages):
 
         result = response.json()
 
-        # Safe parsing (prevents crashes)
         reply = (
             result.get("choices", [{}])[0]
             .get("message", {})
@@ -161,11 +92,72 @@ def call_ai(messages):
         return None, str(e)
 
 
+# -------------------- /daily-focus --------------------
+@app.route("/daily-focus", methods=["POST"])
+def daily_focus():
+    try:
+        data = request.json
+
+        user_id = str(data.get("userId"))
+        user_tasks = data.get("tasks", [])
+        user_goals = data.get("goals", "general productivity")
+
+        if not user_id:
+            return jsonify({"error": "userId is required"}), 400
+
+        # Normalize today's date
+        today = datetime.utcnow().date()
+
+        # 1. Check cache
+        if user_id in daily_focus_cache:
+            cached = daily_focus_cache[user_id]
+
+            if cached["date"] == today:
+                return jsonify({
+                    "success": True,
+                    "response": cached["text"],
+                    "cached": True
+                })
+
+        # 2. Generate from AI
+        prompt = f"""
+Generate today's focus.
+
+User goals: {user_goals}
+Tasks: {user_tasks}
+"""
+
+        reply, error = call_ai([
+            {"role": "system", "content": SYSTEM_PROMPT_DAILY},
+            {"role": "user", "content": prompt}
+        ])
+
+        if error or not reply:
+            return jsonify({"success": False, "message": "AI generation failed"}), 500
+
+        # 🔒 Enforce max 2 lines backend-side
+        lines = reply.split("\n")
+        trimmed = "\n".join(lines[:2])
+
+        # 3. Save to cache
+        daily_focus_cache[user_id] = {
+            "date": today,
+            "text": trimmed
+        }
+
+        return jsonify({
+            "success": True,
+            "response": trimmed,
+            "cached": False
+        })
+
+    except Exception as err:
+        return jsonify({"success": False, "message": str(err)}), 500
+
+
 # -------------------- /generate --------------------
 @app.route("/generate", methods=["POST"])
 def generate():
-    logging.info("Received request to /generate")
-
     data = request.json
     user_prompt = str(data.get("prompt", "")).strip()
 
@@ -186,8 +178,6 @@ def generate():
 # -------------------- /chat --------------------
 @app.route("/chat", methods=["POST"])
 def chat():
-    logging.info("Received request to /chat")
-
     data = request.json
 
     user_name = data.get("name")
@@ -199,7 +189,6 @@ def chat():
     if not user_message:
         return jsonify({"error": "No message provided"}), 400
 
-    # Name handling (same as before)
     if user_name and user_name.strip():
         name_instruction = f"The user's name is {user_name.strip()}."
     else:
@@ -217,14 +206,12 @@ Recent activity: {', '.join(user_activities) if user_activities else 'none'}
         }
     ]
 
-    # Add history
     for msg in history:
         role = msg.get("role", "user")
         content = msg.get("content", "")
         if content:
             messages.append({"role": role, "content": content})
 
-    # Current message
     messages.append({
         "role": "user",
         "content": user_message

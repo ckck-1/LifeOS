@@ -17,7 +17,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
 
   List<Map<String, dynamic>> _messages = [];
   bool _loading = false;
-  String username = ""; // Matching the name in the screenshot
+  String username = "";
   bool _greetingAdded = false;
 
   @override
@@ -26,7 +26,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
     _loadUser();
   }
 
-  // --- LOGIC PRESERVED FROM YOUR CODE ---
   Future<void> _loadUser() async {
     try {
       final res = await http.get(
@@ -70,12 +69,16 @@ class _AIChatScreenState extends State<AIChatScreen> {
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
     _controller.clear();
+
     setState(() {
       _messages.add({"role": "user", "text": text});
       _loading = true;
     });
+
     _scrollToBottom();
+
     try {
       final res = await http.post(
         Uri.parse('$baseUrl/chat'),
@@ -85,6 +88,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
         },
         body: jsonEncode({"message": text}),
       );
+
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         setState(() {
@@ -103,6 +107,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
         _messages.add({"role": "ai", "text": "Network error 🌐"});
       });
     }
+
     setState(() => _loading = false);
     _scrollToBottom();
   }
@@ -119,15 +124,64 @@ class _AIChatScreenState extends State<AIChatScreen> {
     });
   }
 
-  // --- UI FINETUNED TO MATCH SCREENSHOT ---
+  // ✅ NEW: Bold formatter (**text**)
+  Widget _buildFormattedText(String text, bool isUser) {
+    final List<TextSpan> spans = [];
+    final regex = RegExp(r'\*\*(.*?)\*\*');
+    int start = 0;
+
+    for (final match in regex.allMatches(text)) {
+      if (match.start > start) {
+        spans.add(
+          TextSpan(
+            text: text.substring(start, match.start),
+            style: TextStyle(
+              color: isUser ? Colors.black : Colors.white,
+              fontSize: 16,
+              height: 1.3,
+              fontWeight: isUser ? FontWeight.w500 : FontWeight.w400,
+            ),
+          ),
+        );
+      }
+
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: TextStyle(
+            color: isUser ? Colors.black : Colors.white,
+            fontSize: 16,
+            height: 1.3,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+
+      start = match.end;
+    }
+
+    if (start < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start),
+          style: TextStyle(
+            color: isUser ? Colors.black : Colors.white,
+            fontSize: 16,
+            height: 1.3,
+            fontWeight: isUser ? FontWeight.w500 : FontWeight.w400,
+          ),
+        ),
+      );
+    }
+
+    return RichText(text: TextSpan(children: spans));
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Precise colors from the design
     const Color scaffoldBg = Color(0xFF0F172A);
     const Color aiBubbleColor = Color(0xFF1E293B);
-    const Color userBubbleColor = Color(
-      0xFF4ADE80,
-    ); // The bright green in the screenshot
+    const Color userBubbleColor = Color(0xFF4ADE80);
     const Color textSecondary = Color(0xFF94A3B8);
 
     return Scaffold(
@@ -175,9 +229,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
                         : MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      if (!isUser) ...[
-                        // Optional: AI avatar placeholder if you want it to match exactly
-                      ],
                       Flexible(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -196,30 +247,16 @@ class _AIChatScreenState extends State<AIChatScreen> {
                               bottomRight: Radius.circular(isUser ? 4 : 22),
                             ),
                           ),
-                          child: Text(
-                            text,
-                            style: TextStyle(
-                              color: isUser ? Colors.black : Colors.white,
-                              fontSize: 16,
-                              height: 1.3,
-                              fontWeight: isUser
-                                  ? FontWeight.w500
-                                  : FontWeight.w400,
-                            ),
-                          ),
+                          child: _buildFormattedText(text, isUser),
                         ),
                       ),
-                      if (!isUser)
-                        const SizedBox(
-                          width: 40,
-                        ), // Spacing to mimic screenshot flow
+                      if (!isUser) const SizedBox(width: 40),
                     ],
                   ),
                 );
               },
             ),
           ),
-
           if (_loading)
             const Padding(
               padding: EdgeInsets.only(bottom: 12),
@@ -232,8 +269,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
                 ),
               ),
             ),
-
-          // Custom Input Area matching the bottom design
           Container(
             padding: EdgeInsets.only(
               left: 16,

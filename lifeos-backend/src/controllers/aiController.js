@@ -68,8 +68,29 @@ async function dailyFocus(req, res) {
       include: { tasks: true },
     });
 
-    const prompt = `Generate today's focus (2 sentences max). Tasks: ${JSON.stringify(user.tasks)}`;
-    const aiResponse = await callAI(prompt);
+    const prompt = `Generate today's focus (MANDATORY:2 sentences max). Tasks: ${JSON.stringify(user.tasks)}`;
+  const aiResponse = await callAI([
+  {
+    role: "system",
+    content: `
+You are LifeOS AI — a precision daily execution engine.
+
+STRICT RULES:
+- Maximum 2 sentences ONLY
+- Each sentence must be short and actionable
+- No explanations
+- No greetings
+- No extra words before or after
+- No formatting, no bullets
+
+Focus on highest impact actions only.
+`
+  },
+  {
+    role: "user",
+    content: `User tasks: ${JSON.stringify(user.tasks)}`
+  }
+]);
 
     if (aiResponse) {
       const saved = await prisma.aIInsight.create({
