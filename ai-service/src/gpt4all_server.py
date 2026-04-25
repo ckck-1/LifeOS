@@ -106,6 +106,7 @@ Do NOT:
 - Be overly strict or robotic
 
 Instead:
+- Answers as short as possible
 - Talk like a supportive coach in real life
 - Keep it human, warm, and guiding
 """
