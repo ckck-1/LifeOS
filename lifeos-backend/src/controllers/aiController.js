@@ -14,6 +14,21 @@ async function callAI(prompt) {
     return null;
   }
 }
+async function getDaily(prompt) {
+  try {
+    const res = await axios.post(
+      "https://lifeos-1-ai.onrender.com/daily-focus",
+      { prompt },
+      { headers: { "Content-Type": "application/json" }, timeout: 120000 }
+    );
+    return res.data.reply || null;
+  } catch (err) {
+    console.error("AI generate error:", err.message);
+    return null;
+  }
+}
+
+
 
 async function weeklyPlan(req, res) {
   try {
@@ -69,7 +84,7 @@ async function dailyFocus(req, res) {
     });
 
     const prompt = `Generate today's focus (MANDATORY:2 sentences max). Tasks: ${JSON.stringify(user.tasks)}`;
-  const aiResponse = await callAI([
+  const aiResponse = await getDaily([
   {
     role: "system",
     content: `
