@@ -36,6 +36,7 @@ async function weeklyPlan(req, res) {
       where: { id: req.user.id },
       include: { goals: true, tasks: true },
     });
+    
 
     const prompt = `Generate a direct detailed weekly plan for: ${JSON.stringify(user.goals)}. Tasks: ${JSON.stringify(user.tasks)}`;
     const aiResponse = await callAI(prompt);
