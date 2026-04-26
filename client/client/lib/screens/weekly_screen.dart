@@ -60,6 +60,7 @@ class _WeeklyPlanScreenState extends State<WeeklyPlanScreen> {
             .map((e) => e.trim())
             .where((e) => e.isNotEmpty)
             .toList();
+            
 
         for (final line in lines) {
           final normalized = line.toLowerCase();
