@@ -49,7 +49,7 @@ async function weeklyPlan(req, res) {
       return res.json({ success: true, response: savedPlan.content, id: savedPlan.id });
     }
     
-    res.status(500).json({ success: false, message: "AI Failure" });
+    res.status(500).json({ success: false, message: err.message });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
